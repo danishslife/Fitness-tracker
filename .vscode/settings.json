@@ -1,0 +1,21 @@
+{
+  "editor.snippetSuggestions": "top",
+  "editor.tabCompletion": "on",
+  "editor.suggest.showSnippets": true,
+  "files.associations": {
+    "*.tsx": "typescriptreact"
+  },
+  "reactSnippets.settings.typescript": true,
+  "reactSnippets.settings.importReactOnTop": false,
+  "reactSnippets.settings.languageScopes": "typescript,typescriptreact,javascript,javascriptreact",
+  "eslint.workingDirectories": [
+    { "directory": "frontend", "changeProcessCWD": true }
+  ],
+  "editor.formatOnSave": true,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
