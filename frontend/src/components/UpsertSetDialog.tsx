@@ -37,6 +37,7 @@ export const UpsertSetDialog = ({
       try {
         const { exerciseCatalog } = await getAllExerciseCatalog();
         setCatalogOptions(exerciseCatalog);
+        // console.log(exerciseCatalog)
       } catch (error) {
         onSaveFailure(error instanceof Error ? error.message : "Unknown error");
       }
@@ -57,6 +58,7 @@ export const UpsertSetDialog = ({
     if (formData.exerciseCatalog && formData.weight && formData.reps) {
       try {
         setFormData({ exerciseCatalog: "", weight: 0, reps: 0 });
+        console.log(formData)
         await createOneExercise(formData);
         onSaveSuccess();
         handleClose();

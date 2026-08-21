@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import { getAllExercises } from "../ExerciseService";
 import type { Exercise } from "../types/exercise";
-import { SetTable } from "../components/SetTable";
+import { WorkoutCard } from "../components/WorkoutCard";
 import { WorkoutDatePicker } from "../components/WorkoutDatePicker";
-
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
 export const HomePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Exercise[]>([]);
@@ -46,18 +46,27 @@ export const HomePage = () => {
   };
 
   return (
-    <Stack spacing={2} sx={{ alignItems: "center" }}>
-      <WorkoutDatePicker
-        selectedDate={selectedDate}
-        onDateSelect={(date) => setSelectedDate(date)}
-      />
+    <Box
+      sx={{
+        mt: 16,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        width: 600,
+      }}
+    >
+      <Box sx={{ mb: 1 }}>
+        <WorkoutDatePicker
+          selectedDate={selectedDate}
+          onDateSelect={(date) => setSelectedDate(date)}
+        />
+      </Box>
 
-
-      <Stack spacing={2} sx={{ width: "100%" }}>
+      <Card variant="outlined" sx={{ width: "100%" }}>
         {loading && <CircularProgress />}
         {error && <Alert severity="error">{error}</Alert>}
         {!loading && !error && (
-          <SetTable
+          <WorkoutCard
             onSaveFailure={handleFailure}
             onEditSuccess={fetchAllExercises}
             onDeleteSuccess={fetchAllExercises}
@@ -65,8 +74,8 @@ export const HomePage = () => {
             exercise={data}
           />
         )}
-      </Stack>
-    </Stack>
+      </Card>
+    </Box>
   );
 };
 

@@ -55,7 +55,7 @@ export async function createOneExercise(
 
 export async function updateOneExercise(
   exerciseId: string,
-  exerciseCatalog?: string,
+  // exerciseCatalog?: string,
   weight?: number,
   reps?: number,
 ): Promise<Exercise> {
@@ -66,7 +66,7 @@ export async function updateOneExercise(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ exerciseCatalog, weight, reps }),
+      body: JSON.stringify({ weight, reps }),
     },
   );
 

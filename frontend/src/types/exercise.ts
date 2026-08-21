@@ -18,7 +18,7 @@ export type CreateExerciseData = {
 };
 
 export type UpdateExerciseData = {
-  exerciseCatalog?: string;
+  // exerciseCatalog?: string;
   weight?: number;
   reps?: number;
 };

@@ -60,9 +60,9 @@ router.post("/", async (req, res) => {
 
 //Upating One
 router.patch("/:id", getExercise, async (req, res) => {
-  if (req.body.exerciseCatalog != null) {
-    res.locals["exercise"].exerciseCatalog = req.body.exerciseCatalog;
-  }
+  // if (req.body.exerciseCatalog != null) {
+  //   res.locals["exercise"].exerciseCatalog = req.body.exerciseCatalog;
+  // }
   if (req.body.weight != null) {
     res.locals["exercise"].weight = req.body.weight;
   }
