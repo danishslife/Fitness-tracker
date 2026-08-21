@@ -1,17 +1,33 @@
 export interface Exercise {
   _id: string;
-  name: string;
+  exerciseCatalog: ExerciseCatalog;
   weight: number;
   reps: number;
 }
 
-export type CreateExerciseData = Omit<Exercise, "_id">;
+export interface ExerciseCatalog {
+  _id: string;
+  name: string;
+  targetMuscleGroup: string;
+}
 
-export type UpdateExerciseData = Partial<CreateExerciseData>;
+export type CreateExerciseData = {
+  exerciseCatalog: string; // catalog _id
+  weight: number;
+  reps: number;
+};
+
+export type UpdateExerciseData = {
+  exerciseCatalog?: string;
+  weight?: number;
+  reps?: number;
+};
 
 export interface ExercisesResponse {
-  count: number;
   exercises: Exercise[];
+}
+export interface ExercisesCatalogResponse {
+  exerciseCatalog: ExerciseCatalog[];
 }
 
 export interface ApiErrorResponse {

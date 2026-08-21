@@ -4,6 +4,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import exerciseRouter from "./routes/exercise";
+import exerciseCatalogRouter from "./routes/exerciseCatalog";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -23,6 +24,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/exercise", exerciseRouter);
+app.use("/api/exerciseCatalog", exerciseCatalogRouter);
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}`));

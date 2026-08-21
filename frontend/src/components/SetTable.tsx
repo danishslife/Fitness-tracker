@@ -2,20 +2,23 @@ import { useEffect, useRef, useState } from "react";
 import { deleteOneExercise, updateOneExercise } from "../ExerciseService";
 import type { Exercise, UpdateExerciseData } from "../types/exercise";
 import type { FocusEvent } from "react";
+import { UpsertSetDialog } from "../components/UpsertSetDialog";
 
-interface DataTableProps {
+interface SetTableProps {
   onSaveFailure: (error: string) => void;
   onEditSuccess: () => void;
   onDeleteSuccess: () => void;
+  onSaveSuccess: ()=> void
   exercise: Exercise[];
 }
 
-export const DataTable = ({
+export const SetTable = ({
   onSaveFailure,
   onEditSuccess,
   onDeleteSuccess,
+  onSaveSuccess,
   exercise
-}: DataTableProps) => {
+}: SetTableProps) => {
   const [editId, setEditId] = useState<string | false>(false);
   const outsideClick = useRef<HTMLTableElement>(null);
 
@@ -61,7 +64,7 @@ export const DataTable = ({
     try {
       await updateOneExercise(
         id,
-        updatedData.name,
+        updatedData.exerciseCatalog,
         updatedData.weight,
         updatedData.reps,
       );
@@ -70,6 +73,8 @@ export const DataTable = ({
       onSaveFailure(error instanceof Error ? error.message : "Unknown error");
     }
   };
+
+  
   return (
     <div className="search-table-container">
       <table ref={outsideClick}>
@@ -78,23 +83,22 @@ export const DataTable = ({
             <th>Name</th>
             <th>Weight</th>
             <th>Reps</th>
-            <th>Action</th>
+            <th>Action </th>
+            <th>
+              <UpsertSetDialog
+                onSaveFailure={onSaveFailure}
+                onSaveSuccess={onSaveSuccess}
+              />
+            </th>
           </tr>
         </thead>
 
         <tbody>
           {exercise.map((item) => (
             <tr key={item._id}>
+              <td>{item.exerciseCatalog?.name ?? ""}</td>
               <td
                 id={item._id}
-                contentEditable={editId === item._id}
-                onBlur={(e: FocusEvent<HTMLTableCellElement>) =>
-                  handleEdit(item._id, { name: e.currentTarget.innerText })
-                }
-              >
-                {item.name}
-              </td>
-              <td
                 contentEditable={editId === item._id}
                 onBlur={(e: FocusEvent<HTMLTableCellElement>) =>
                   handleEdit(item._id, {

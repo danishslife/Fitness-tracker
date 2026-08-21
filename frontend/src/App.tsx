@@ -1,11 +1,15 @@
 import "./App.css";
-import HomePage from "./HomePage";
+import Container from "@mui/material/Container";
+import Box from "@mui/material/Box";
+import HomePage from "./pages/HomePage";
 
 function App() {
   return (
-    <div className="App">
-      <HomePage />
-    </div>
+    <Container maxWidth="md">
+      <Box sx={{ py: 2, textAlign: "center" }}>
+        <HomePage />
+      </Box>
+    </Container>
   );
 }
 
