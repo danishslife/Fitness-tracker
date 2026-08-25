@@ -222,7 +222,7 @@ export const UpsertSetDialog = ({
                   isOptionEqualToValue={(option, value) =>
                     option._id === value._id
                   }
-                  value={selectedExercise}
+                  value={selectedExercise ?? undefined}
                   onChange={(_event, newValue) => {
                     field.onChange(newValue?._id ?? "");
                   }}
