@@ -56,10 +56,6 @@ button {
   font-weight: 600;
 }
 
-.search-input {
-  width: 200px;
-}
-
 .search-table-container {
   display: flex;
   flex-direction: column;
@@ -117,43 +113,6 @@ table th {
   background-color: lightcoral;
   color: #fff;
   text-transform: uppercase;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 20px 0;
-}
-
-.pagination-btn {
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  color: #333;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 6px 12px;
-  transition:
-    background-color 0.2s,
-    border-color 0.2s;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background-color: #f0f0f0;
-  border-color: #999;
-}
-
-.pagination-btn.active {
-  background-color: #007bff;
-  border-color: #007bff;
-  color: #fff;
-}
-
-.pagination-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 @media only screen and (max-width: 600px) {

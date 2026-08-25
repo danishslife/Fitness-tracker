@@ -1,5 +1,6 @@
 import type {
   ApiErrorResponse,
+  CreateExerciseData,
   DeleteExerciseResponse,
   Exercise,
   ExercisesResponse,
@@ -16,15 +17,14 @@ async function parseResponse<T>(res: Response): Promise<T> {
 }
 
 export async function getAllExercises(
-  page: number,
-  name: string,
   selectedDate: Date,
 ): Promise<ExercisesResponse> {
-  console.log(selectedDate);
-  const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
-  const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
+  const startOfDay = new Date(selectedDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(selectedDate);
+  endOfDay.setHours(23, 59, 59, 999);
   const res = await fetch(
-    `${import.meta.env.VITE_API_URL}/api/exercise/?page=${page}&name=${name}&startDate=${startOfDay.toISOString()}&endDate=${endOfDay.toISOString()}`,
+    `${import.meta.env.VITE_API_URL}/api/exercise/?startDate=${startOfDay.toISOString()}&endDate=${endOfDay.toISOString()}`,
   );
 
   return parseResponse<ExercisesResponse>(res);
@@ -39,15 +39,15 @@ export async function getOneExercise(exerciseId: string): Promise<Exercise> {
 }
 
 export async function createOneExercise(
-  exercise: Omit<Exercise, "_id">,
+  exercise: CreateExerciseData,
 ): Promise<Exercise> {
-  const { name, weight, reps } = exercise;
+  const { exerciseCatalog, weight, reps } = exercise;
   const res = await fetch(`${import.meta.env.VITE_API_URL}/api/exercise/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name, weight, reps }),
+    body: JSON.stringify({ exerciseCatalog, weight, reps }),
   });
 
   return parseResponse<Exercise>(res);
@@ -55,7 +55,7 @@ export async function createOneExercise(
 
 export async function updateOneExercise(
   exerciseId: string,
-  name?: string,
+  // exerciseCatalog?: string,
   weight?: number,
   reps?: number,
 ): Promise<Exercise> {
@@ -66,7 +66,7 @@ export async function updateOneExercise(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, weight, reps }),
+      body: JSON.stringify({ weight, reps }),
     },
   );
 

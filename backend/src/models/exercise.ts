@@ -1,9 +1,10 @@
-import { getModelForClass, prop, modelOptions } from "@typegoose/typegoose";
+import { getModelForClass, prop, modelOptions, type Ref } from "@typegoose/typegoose";
+import { ExerciseCatalogSchema } from "./exerciseCatalog";
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 class ExerciseSchema {
-  @prop({ required: true })
-  public name!: string;
+  @prop({ required: true, ref: () => ExerciseCatalogSchema})
+  public exerciseCatalog!: Ref<ExerciseCatalogSchema>;
 
   @prop({ required: true })
   public weight!: number;
