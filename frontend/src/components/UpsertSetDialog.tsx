@@ -109,12 +109,15 @@ export const UpsertSetDialog = ({
   ...props
 }: UpsertSetDialogProps) => {
   const mode = props.mode;
+  const editExerciseId =
+    props.mode === "editSet" ? props.exercise._id : undefined;
+  const addCatalogId =
+    props.mode === "addSet" ? props.exerciseCatalog._id : undefined;
   const [catalogOptions, setCatalogOptions] = useState<ExerciseCatalog[]>([]);
   const { control, handleSubmit, reset } = useForm<SetFormData>({
     resolver: zodResolver(setFormSchema),
     defaultValues: getInitialFormData(props),
   });
-
 
   useEffect(() => {
     if (!open) {
@@ -122,7 +125,10 @@ export const UpsertSetDialog = ({
     }
 
     reset(getInitialFormData(props));
-  }, [open, reset, props]);
+    // Only re-reset when the dialog opens or the edit/add target changes —
+    // not on every render (props object identity changes each render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- props read for getInitialFormData; stable via mode/editExerciseId/addCatalogId
+  }, [open, reset, mode, editExerciseId, addCatalogId]);
 
   const isNameDisabled = mode !== "log";
 
@@ -210,6 +216,7 @@ export const UpsertSetDialog = ({
               return (
                 <Autocomplete
                   disabled={isNameDisabled}
+                  disableClearable
                   options={catalogOptions}
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) =>
