@@ -13,37 +13,30 @@ export const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  useEffect(() => {
-    async function fetchExercises() {
+  const fetchAllExercises = useCallback(async (showSpinner = false) => {
+    if (showSpinner) {
       setLoading(true);
-      try {
-        const { exercises } = await getAllExercises(selectedDate);
-        setData(exercises);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
+    }
+    try {
+      const { exercises } = await getAllExercises(selectedDate);
+      setData(exercises);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      if (showSpinner) {
         setLoading(false);
       }
     }
-
-    fetchExercises();
   }, [selectedDate]);
+
+  useEffect(() => {
+    void fetchAllExercises(true);
+  }, [fetchAllExercises]);
 
   const handleFailure = useCallback((error: string) => {
     setError(error);
   }, []);
-
-  const fetchAllExercises = async () => {
-    setLoading(true);
-    try {
-      const { exercises } = await getAllExercises(selectedDate);
-      setData(exercises);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Box
@@ -68,9 +61,9 @@ export const HomePage = () => {
         {!loading && !error && (
           <WorkoutCard
             onSaveFailure={handleFailure}
-            onEditSuccess={fetchAllExercises}
-            onDeleteSuccess={fetchAllExercises}
-            onSaveSuccess={fetchAllExercises}
+            onEditSuccess={() => void fetchAllExercises()}
+            onDeleteSuccess={() => void fetchAllExercises()}
+            onSaveSuccess={() => void fetchAllExercises()}
             exercise={data}
           />
         )}
