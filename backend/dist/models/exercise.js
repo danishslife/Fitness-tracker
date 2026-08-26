@@ -11,13 +11,27 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Exercise = void 0;
 const typegoose_1 = require("@typegoose/typegoose");
-class ExerciseSchema {
-    name;
-}
+const exerciseCatalog_1 = require("./exerciseCatalog");
+let ExerciseSchema = class ExerciseSchema {
+    exerciseCatalog;
+    weight;
+    reps;
+};
+__decorate([
+    (0, typegoose_1.prop)({ required: true, ref: () => exerciseCatalog_1.ExerciseCatalogSchema }),
+    __metadata("design:type", Object)
+], ExerciseSchema.prototype, "exerciseCatalog", void 0);
 __decorate([
     (0, typegoose_1.prop)({ required: true }),
-    __metadata("design:type", String)
-], ExerciseSchema.prototype, "name", void 0);
+    __metadata("design:type", Number)
+], ExerciseSchema.prototype, "weight", void 0);
+__decorate([
+    (0, typegoose_1.prop)({ required: true }),
+    __metadata("design:type", Number)
+], ExerciseSchema.prototype, "reps", void 0);
+ExerciseSchema = __decorate([
+    (0, typegoose_1.modelOptions)({ schemaOptions: { timestamps: true } })
+], ExerciseSchema);
 exports.Exercise = (0, typegoose_1.getModelForClass)(ExerciseSchema);
 // async function seed() {
 //   try {

@@ -9,21 +9,20 @@ const router = express_1.default.Router();
 //Getting all
 router.get("/", async (req, res) => {
     try {
-        const sortField = req.query["sort"] || "name";
-        const sortOrder = parseInt(req.query["sortOrder"] || "1");
-        const page = Number(req.query["page"]) || 1;
-        const pageLimit = Number(req.query["pageLimit"]) || 10;
-        const skip = (page - 1) * pageLimit;
-        const filter = {};
-        if (req.query.name) {
-            filter.name = { $regex: req.query.name, $options: "i" };
+        const startDate = req.query["startDate"];
+        const endDate = req.query["endDate"];
+        if (!startDate || !endDate) {
+            res.status(400).json({
+                message: "The 'startDate' and 'endDate' fields are required and cannot be empty.",
+            });
+            return;
         }
-        const exercises = await exercise_1.Exercise.find(filter)
-            .sort({ [sortField]: sortOrder })
-            .skip(skip)
-            .limit(pageLimit);
-        const count = await exercise_1.Exercise.countDocuments(filter);
-        res.json({ count, exercises });
+        const exercises = await exercise_1.Exercise.find({
+            createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+        })
+            .populate("exerciseCatalog")
+            .sort({ createdAt: 1 });
+        res.json({ exercises });
     }
     catch (error) {
         const message = error instanceof Error ? error.message : "An error occurred";
@@ -31,17 +30,24 @@ router.get("/", async (req, res) => {
     }
 });
 //Getting One
-router.get("/:id", getexercise, (req, res) => {
+router.get("/:id", getExercise, (req, res) => {
     res.json(res.locals["exercise"]);
 });
 //Creating One
 router.post("/", async (req, res) => {
     const exercise = new exercise_1.Exercise({
-        name: req.body.name,
+        exerciseCatalog: req.body.exerciseCatalog,
+        weight: req.body.weight,
+        reps: req.body.reps,
     });
     try {
-        const newexercise = await exercise.save();
-        res.status(201).json(newexercise);
+        if (!req.body.exerciseCatalog) {
+            res.status(400).json({ message: "exerciseCatalog is required" });
+            return;
+        }
+        const newExercise = await exercise.save();
+        await newExercise.populate("exerciseCatalog");
+        res.status(201).json(newExercise);
     }
     catch (error) {
         const message = error instanceof Error ? error.message : "An error occurred";
@@ -49,13 +55,20 @@ router.post("/", async (req, res) => {
     }
 });
 //Upating One
-router.patch("/:id", getexercise, async (req, res) => {
-    if (req.body.name != null) {
-        res.locals["exercise"].name = req.body.name;
+router.patch("/:id", getExercise, async (req, res) => {
+    // if (req.body.exerciseCatalog != null) {
+    //   res.locals["exercise"].exerciseCatalog = req.body.exerciseCatalog;
+    // }
+    if (req.body.weight != null) {
+        res.locals["exercise"].weight = req.body.weight;
+    }
+    if (req.body.reps != null) {
+        res.locals["exercise"].reps = req.body.reps;
     }
     try {
-        const updatedexercise = await res.locals["exercise"].save();
-        res.json(updatedexercise);
+        const updatedExercise = await res.locals["exercise"].save();
+        await updatedExercise.populate("exerciseCatalog");
+        res.json(updatedExercise);
     }
     catch (error) {
         const message = error instanceof Error ? error.message : "An error occurred";
@@ -63,7 +76,7 @@ router.patch("/:id", getexercise, async (req, res) => {
     }
 });
 //Deleting One
-router.delete("/:id", getexercise, async (req, res) => {
+router.delete("/:id", getExercise, async (req, res) => {
     try {
         await res.locals["exercise"].deleteOne();
         res.json({ message: "exercise deleted" });
@@ -73,10 +86,10 @@ router.delete("/:id", getexercise, async (req, res) => {
         res.status(500).json({ message });
     }
 });
-async function getexercise(req, res, next) {
+async function getExercise(req, res, next) {
     let exercise;
     try {
-        exercise = await exercise_1.Exercise.findById(req.params.id);
+        exercise = await exercise_1.Exercise.findById(req.params.id).populate("exerciseCatalog");
         if (exercise == null) {
             return res.status(404).json({ message: "exercise not found" });
         }
