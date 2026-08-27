@@ -13,10 +13,7 @@ export const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  const fetchAllExercises = useCallback(async (showSpinner = false) => {
-    if (showSpinner) {
-      setLoading(true);
-    }
+  const fetchAllExercises = useCallback(async () => {
     try {
       const { exercises } = await getAllExercises(selectedDate);
       setData(exercises);
@@ -24,15 +21,40 @@ export const HomePage = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
-      if (showSpinner) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }, [selectedDate]);
 
   useEffect(() => {
-    void fetchAllExercises(true);
-  }, [fetchAllExercises]);
+    let cancelled = false;
+
+    void getAllExercises(selectedDate).then(
+      ({ exercises }) => {
+        if (cancelled) {
+          return;
+        }
+        setData(exercises);
+        setError(null);
+        setLoading(false);
+      },
+      (err: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setLoading(false);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate]);
+
+  const handleDateSelect = useCallback((date: Date) => {
+    setSelectedDate(date);
+    setLoading(true);
+  }, []);
 
   const handleFailure = useCallback((error: string) => {
     setError(error);
@@ -45,13 +67,13 @@ export const HomePage = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-end",
-        width: 600,
+        width: "100%",
       }}
     >
       <Box sx={{ mb: 1 }}>
         <WorkoutDatePicker
           selectedDate={selectedDate}
-          onDateSelect={(date) => setSelectedDate(date)}
+          onDateSelect={handleDateSelect}
         />
       </Box>
 

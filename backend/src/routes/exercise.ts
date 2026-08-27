@@ -3,7 +3,11 @@ import express from "express";
 import { z } from "zod";
 import { Exercise } from "../models/exercise";
 import { validateBody } from "../middlewares/schemaValidator";
+import { requireAuth } from "../middlewares/requireAuth";
+
 const router = express.Router();
+
+router.use(requireAuth);
 
 const createSetSchema = z.object({
   exerciseCatalog: z.string().min(1, "Exercise is required"),
@@ -28,34 +32,7 @@ router.get("/", async (req: Request, res: Response) => {
     }
 
     const exercises = await Exercise.find({
-      createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
-    })
-      .populate("exerciseCatalog")
-      .sort({ createdAt: 1 });
-
-    res.json({ exercises });
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "An error occurred";
-    res.status(500).json({ message });
-  }
-});
-
-//Getting all
-router.post("/duplicate", async (req: Request, res: Response) => {
-  try {
-    const startDate = req.body["startDate"] as string;
-    const endDate = req.body["endDate"] as string;
-
-    if (!startDate || !endDate) {
-      res.status(400).json({
-        message:
-          "The 'startDate' and 'endDate' fields are required and cannot be empty.",
-      });
-      return;
-    }
-
-    const exercises = await Exercise.find({
+      user: res.locals["user"]._id,
       createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
     })
       .populate("exerciseCatalog")
@@ -80,6 +57,7 @@ router.post("/", validateBody(createSetSchema), async (req, res) => {
     exerciseCatalog: req.body.exerciseCatalog,
     weight: req.body.weight,
     reps: req.body.reps,
+    user: res.locals["user"]._id,
   });
   try {
     if (!req.body.exerciseCatalog) {
@@ -136,6 +114,35 @@ router.delete("/:id", getExercise, async (req, res) => {
   }
 });
 
+// //Getting all
+// router.post("/duplicate", async (req: Request, res: Response) => {
+//   try {
+//     const startDate = req.body["startDate"] as string;
+//     const endDate = req.body["endDate"] as string;
+
+//     if (!startDate || !endDate) {
+//       res.status(400).json({
+//         message:
+//           "The 'startDate' and 'endDate' fields are required and cannot be empty.",
+//       });
+//       return;
+//     }
+
+//     const exercises = await Exercise.find({
+//       user: res.locals["user"]._id,
+//       createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+//     })
+//       .populate("exerciseCatalog")
+//       .sort({ createdAt: 1 });
+
+//     res.json({ exercises });
+//   } catch (error: unknown) {
+//     const message =
+//       error instanceof Error ? error.message : "An error occurred";
+//     res.status(500).json({ message });
+//   }
+// });
+
 async function getExercise(req: Request, res: Response, next: NextFunction) {
   let exercise;
   try {
@@ -143,6 +150,10 @@ async function getExercise(req: Request, res: Response, next: NextFunction) {
       "exerciseCatalog",
     );
     if (exercise == null) {
+      return res.status(404).json({ message: "exercise not found" });
+    }
+
+    if (String(exercise.user) !== String(res.locals["user"]._id)) {
       return res.status(404).json({ message: "exercise not found" });
     }
   } catch (error) {

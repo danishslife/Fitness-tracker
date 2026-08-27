@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { User } from "../models/user";
 import { z } from "zod";
 import { validateBody } from "../middlewares/schemaValidator";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const registerSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
@@ -92,10 +93,18 @@ router.post(
         user: { _id: user._id, email: user.email },
       });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "An error occured"
-      res.status(500).json({message})
+      const message =
+        error instanceof Error ? error.message : "An error occured";
+      res.status(500).json({ message });
     }
   },
 );
+
+router.get("/me", requireAuth, (req: Request, res: Response) => {
+  const user = res.locals["user"];
+  res.json({
+    user: { _id: user._id, email: user.email },
+  });
+});
 
 export default router;
