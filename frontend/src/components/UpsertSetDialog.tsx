@@ -1,8 +1,4 @@
-import {
-  useEffect,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -11,12 +7,8 @@ import IconButton from "@mui/material/IconButton";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import type {
-  CreateExerciseData,
-  Exercise,
-  ExerciseCatalog,
-} from "../types/exercise";
-import { createOneExercise } from "../ExerciseService";
+import type { Exercise, ExerciseCatalog } from "../types/exercise";
+import { createOneExercise, updateOneExercise } from "../ExerciseService";
 import { getAllExerciseCatalog } from "../ExerciseCatalogService";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -114,7 +106,12 @@ export const UpsertSetDialog = ({
   const addCatalogId =
     props.mode === "addSet" ? props.exerciseCatalog._id : undefined;
   const [catalogOptions, setCatalogOptions] = useState<ExerciseCatalog[]>([]);
-  const { control, handleSubmit, reset } = useForm<SetFormData>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isDirty, isValid },
+  } = useForm<SetFormData>({
     resolver: zodResolver(setFormSchema),
     defaultValues: getInitialFormData(props),
   });
@@ -149,7 +146,6 @@ export const UpsertSetDialog = ({
     void loadCatalog();
   }, [open, onSaveFailure]);
 
-
   const blockNegativeKeys = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
       e.preventDefault();
@@ -158,13 +154,25 @@ export const UpsertSetDialog = ({
 
   const onSubmit = async (formData: SetFormData) => {
     try {
-      const payload: CreateExerciseData = {
-        exerciseCatalog: formData.exerciseCatalog,
-        weight: Number(formData.weight),
-        reps: Number(formData.reps),
-      };
+      if (mode === "editSet") {
+        if (!editExerciseId) {
+          onSaveFailure("Cannot update set: missing exercise id");
+          return;
+        }
 
-      await createOneExercise(payload);
+        await updateOneExercise(
+          editExerciseId,
+          Number(formData.weight),
+          Number(formData.reps),
+        );
+      } else {
+        await createOneExercise({
+          exerciseCatalog: formData.exerciseCatalog,
+          weight: Number(formData.weight),
+          reps: Number(formData.reps),
+        });
+      }
+
       reset(emptyForm);
       onSaveSuccess();
       onClose();
@@ -172,8 +180,6 @@ export const UpsertSetDialog = ({
       onSaveFailure(error instanceof Error ? error.message : "Unknown error");
     }
   };
-
-
 
   return (
     <>
@@ -297,7 +303,11 @@ export const UpsertSetDialog = ({
           />
         </DialogContent>
         <DialogActions>
-          <Button type="submit" variant="contained">
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={!isValid || !isDirty}
+          >
             SAVE
           </Button>
         </DialogActions>

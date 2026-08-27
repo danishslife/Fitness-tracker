@@ -58,7 +58,7 @@ export const HomePage = () => {
       <Card variant="outlined" sx={{ width: "100%" }}>
         {loading && <CircularProgress />}
         {error && <Alert severity="error">{error}</Alert>}
-        {!loading && !error && (
+        {!loading && (
           <WorkoutCard
             onSaveFailure={handleFailure}
             onEditSuccess={() => void fetchAllExercises()}

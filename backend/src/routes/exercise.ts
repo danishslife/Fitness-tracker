@@ -1,7 +1,17 @@
 import type { Request, Response, NextFunction } from "express";
 import express from "express";
+import { z } from "zod";
 import { Exercise } from "../models/exercise";
+import { validateBody } from "../middlewares/schemaValidator";
 const router = express.Router();
+
+const createSetSchema = z.object({
+  exerciseCatalog: z.string().min(1, "Exercise is required"),
+  weight: z.number().positive("Weight must be greater than 0"),
+  reps: z.number().positive("Reps must be greater than 0"),
+});
+
+const editSetSchema = createSetSchema.omit({ exerciseCatalog: true });
 
 //Getting all
 router.get("/", async (req: Request, res: Response) => {
@@ -31,13 +41,41 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
+//Getting all
+router.post("/duplicate", async (req: Request, res: Response) => {
+  try {
+    const startDate = req.body["startDate"] as string;
+    const endDate = req.body["endDate"] as string;
+
+    if (!startDate || !endDate) {
+      res.status(400).json({
+        message:
+          "The 'startDate' and 'endDate' fields are required and cannot be empty.",
+      });
+      return;
+    }
+
+    const exercises = await Exercise.find({
+      createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    })
+      .populate("exerciseCatalog")
+      .sort({ createdAt: 1 });
+
+    res.json({ exercises });
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    res.status(500).json({ message });
+  }
+});
+
 //Getting One
 router.get("/:id", getExercise, (req, res) => {
   res.json(res.locals["exercise"]);
 });
 
 //Creating One
-router.post("/", async (req, res) => {
+router.post("/", validateBody(createSetSchema), async (req, res) => {
   const exercise = new Exercise({
     exerciseCatalog: req.body.exerciseCatalog,
     weight: req.body.weight,
@@ -59,27 +97,32 @@ router.post("/", async (req, res) => {
 });
 
 //Upating One
-router.patch("/:id", getExercise, async (req, res) => {
-  // if (req.body.exerciseCatalog != null) {
-  //   res.locals["exercise"].exerciseCatalog = req.body.exerciseCatalog;
-  // }
-  if (req.body.weight != null) {
-    res.locals["exercise"].weight = req.body.weight;
-  }
-  if (req.body.reps != null) {
-    res.locals["exercise"].reps = req.body.reps;
-  }
+router.patch(
+  "/:id",
+  validateBody(editSetSchema),
+  getExercise,
+  async (req, res) => {
+    // if (req.body.exerciseCatalog != null) {
+    //   res.locals["exercise"].exerciseCatalog = req.body.exerciseCatalog;
+    // }
+    if (req.body.weight != null) {
+      res.locals["exercise"].weight = req.body.weight;
+    }
+    if (req.body.reps != null) {
+      res.locals["exercise"].reps = req.body.reps;
+    }
 
-  try {
-    const updatedExercise = await res.locals["exercise"].save();
-    await updatedExercise.populate("exerciseCatalog");
-    res.json(updatedExercise);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "An error occurred";
-    res.status(400).json({ message });
-  }
-});
+    try {
+      const updatedExercise = await res.locals["exercise"].save();
+      await updatedExercise.populate("exerciseCatalog");
+      res.json(updatedExercise);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      res.status(400).json({ message });
+    }
+  },
+);
 
 //Deleting One
 router.delete("/:id", getExercise, async (req, res) => {

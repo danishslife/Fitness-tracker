@@ -13,7 +13,9 @@ async function parseResponse<T>(res: Response): Promise<T> {
     return data as T;
   }
 
-  throw new Error((data as ApiErrorResponse).message);
+  throw new Error(
+    (data as ApiErrorResponse).message || "Request failed",
+  );
 }
 
 export async function getAllExercises(
