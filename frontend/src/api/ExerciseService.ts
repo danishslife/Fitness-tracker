@@ -5,6 +5,7 @@ import type {
   Exercise,
   ExercisesResponse,
 } from "../types/exercise";
+import { authFetch } from "./authFetch";
 
 async function parseResponse<T>(res: Response): Promise<T> {
   const data = (await res.json()) as T | ApiErrorResponse;
@@ -25,7 +26,7 @@ export async function getAllExercises(
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(selectedDate);
   endOfDay.setHours(23, 59, 59, 999);
-  const res = await fetch(
+  const res = await authFetch(
     `${import.meta.env.VITE_API_URL}/api/exercise/?startDate=${startOfDay.toISOString()}&endDate=${endOfDay.toISOString()}`,
   );
 
@@ -33,7 +34,7 @@ export async function getAllExercises(
 }
 
 export async function getOneExercise(exerciseId: string): Promise<Exercise> {
-  const res = await fetch(
+  const res = await authFetch(
     `${import.meta.env.VITE_API_URL}/api/exercise/${exerciseId}`,
   );
 
@@ -44,7 +45,7 @@ export async function createOneExercise(
   exercise: CreateExerciseData,
 ): Promise<Exercise> {
   const { exerciseCatalog, weight, reps } = exercise;
-  const res = await fetch(`${import.meta.env.VITE_API_URL}/api/exercise/`, {
+  const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/exercise/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -61,7 +62,7 @@ export async function updateOneExercise(
   weight?: number,
   reps?: number,
 ): Promise<Exercise> {
-  const res = await fetch(
+  const res = await authFetch(
     `${import.meta.env.VITE_API_URL}/api/exercise/${exerciseId}`,
     {
       method: "PATCH",
@@ -78,7 +79,7 @@ export async function updateOneExercise(
 export async function deleteOneExercise(
   exerciseId: string,
 ): Promise<DeleteExerciseResponse> {
-  const res = await fetch(
+  const res = await authFetch(
     `${import.meta.env.VITE_API_URL}/api/exercise/${exerciseId}`,
     {
       method: "DELETE",
