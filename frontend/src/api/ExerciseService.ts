@@ -4,7 +4,7 @@ import type {
   DeleteExerciseResponse,
   Exercise,
   ExercisesResponse,
-} from "./types/exercise";
+} from "../types/exercise";
 
 async function parseResponse<T>(res: Response): Promise<T> {
   const data = (await res.json()) as T | ApiErrorResponse;

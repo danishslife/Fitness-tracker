@@ -14,7 +14,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
-import { deleteOneExercise } from "../ExerciseService";
+import { deleteOneExercise } from "../api/ExerciseService";
 
 interface SetTableProps {
   onSaveFailure: (error: string) => void;

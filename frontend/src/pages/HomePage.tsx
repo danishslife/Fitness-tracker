@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
-import { getAllExercises } from "../ExerciseService";
+import { getAllExercises } from "../api/ExerciseService";
 import type { Exercise } from "../types/exercise";
 import { WorkoutCard } from "../components/WorkoutCard";
 import { WorkoutDatePicker } from "../components/WorkoutDatePicker";
