@@ -34,6 +34,7 @@ type UpsertSetDialogProps = {
   open: boolean;
   onClose: () => void;
   mode: UpsertSetDialogMode;
+  selectedDate: Date;
 } & (
   | {
       mode: "editSet";
@@ -98,6 +99,7 @@ export const UpsertSetDialog = ({
   onSaveSuccess,
   open,
   onClose,
+  selectedDate,
   ...props
 }: UpsertSetDialogProps) => {
   const mode = props.mode;
@@ -170,6 +172,7 @@ export const UpsertSetDialog = ({
           exerciseCatalog: formData.exerciseCatalog,
           weight: Number(formData.weight),
           reps: Number(formData.reps),
+          performedAt: selectedDate.toISOString(),
         });
       }
 

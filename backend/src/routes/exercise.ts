@@ -13,9 +13,13 @@ const createSetSchema = z.object({
   exerciseCatalog: z.string().min(1, "Exercise is required"),
   weight: z.number().positive("Weight must be greater than 0"),
   reps: z.number().positive("Reps must be greater than 0"),
+  performedAt: z.iso.datetime(),
 });
 
-const editSetSchema = createSetSchema.omit({ exerciseCatalog: true });
+const editSetSchema = z.object({
+  weight: z.number().positive("Weight must be greater than 0"),
+  reps: z.number().positive("Reps must be greater than 0"),
+});
 
 //Getting all
 router.get("/", async (req: Request, res: Response) => {
@@ -33,10 +37,10 @@ router.get("/", async (req: Request, res: Response) => {
 
     const exercises = await Exercise.find({
       user: res.locals["user"]._id,
-      createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
+      performedAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
     })
       .populate("exerciseCatalog")
-      .sort({ createdAt: 1 });
+      .sort({ performedAt: 1, createdAt: 1 });
 
     res.json({ exercises });
   } catch (error: unknown) {
@@ -57,6 +61,7 @@ router.post("/", validateBody(createSetSchema), async (req, res) => {
     exerciseCatalog: req.body.exerciseCatalog,
     weight: req.body.weight,
     reps: req.body.reps,
+    performedAt: new Date(req.body.performedAt),
     user: res.locals["user"]._id,
   });
   try {

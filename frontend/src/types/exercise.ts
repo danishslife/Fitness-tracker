@@ -3,6 +3,7 @@ export interface Exercise {
   exerciseCatalog: ExerciseCatalog;
   weight: number;
   reps: number;
+  performedAt: string;
 }
 
 export interface ExerciseCatalog {
@@ -15,6 +16,7 @@ export type CreateExerciseData = {
   exerciseCatalog: string; // catalog _id
   weight: number;
   reps: number;
+  performedAt: string;
 };
 
 export type UpdateExerciseData = {

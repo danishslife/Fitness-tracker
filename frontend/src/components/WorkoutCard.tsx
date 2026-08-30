@@ -22,6 +22,7 @@ interface WorkoutCardProps {
   onDeleteSuccess: () => void;
   onSaveSuccess: () => void;
   exercise: Exercise[];
+  selectedDate: Date;
 }
 
 export const WorkoutCard = ({
@@ -30,6 +31,7 @@ export const WorkoutCard = ({
   onDeleteSuccess,
   onSaveSuccess,
   exercise,
+  selectedDate,
 }: WorkoutCardProps) => {
   const [mode, setMode] = useState<UpsertSetDialogMode | null>(null);
   const [open, setOpen] = useState(false);
@@ -101,6 +103,7 @@ export const WorkoutCard = ({
             onClose={handleClose}
             mode="editSet"
             exercise={editExercise}
+            selectedDate={selectedDate}
           />
         )}
         {mode === "addSet" && editCatalog && (
@@ -111,6 +114,7 @@ export const WorkoutCard = ({
             onClose={handleClose}
             mode="addSet"
             exerciseCatalog={editCatalog}
+            selectedDate={selectedDate}
           />
         )}
         {mode === "log" && (
@@ -120,6 +124,7 @@ export const WorkoutCard = ({
             open={open}
             onClose={handleClose}
             mode="log"
+            selectedDate={selectedDate}
           />
         )}
         <Button variant="contained" onClick={handleAddExercise}>
