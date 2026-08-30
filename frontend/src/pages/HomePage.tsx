@@ -104,6 +104,7 @@ export const HomePage = ({ onLogout }: HomePageProps) => {
             onDeleteSuccess={() => void fetchAllExercises()}
             onSaveSuccess={() => void fetchAllExercises()}
             exercise={data}
+            selectedDate={selectedDate}
           />
         )}
       </Card>

@@ -15,6 +15,9 @@ class ExerciseSchema {
 
   @prop({ required: true })
   public reps!: number;
+
+  @prop({ required: true })
+  public performedAt!: Date;
 }
 
 export const Exercise = getModelForClass(ExerciseSchema);

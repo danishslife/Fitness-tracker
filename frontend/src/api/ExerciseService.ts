@@ -44,13 +44,13 @@ export async function getOneExercise(exerciseId: string): Promise<Exercise> {
 export async function createOneExercise(
   exercise: CreateExerciseData,
 ): Promise<Exercise> {
-  const { exerciseCatalog, weight, reps } = exercise;
+  const { exerciseCatalog, weight, reps, performedAt } = exercise;
   const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/exercise/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ exerciseCatalog, weight, reps }),
+    body: JSON.stringify({ exerciseCatalog, weight, reps, performedAt }),
   });
 
   return parseResponse<Exercise>(res);
