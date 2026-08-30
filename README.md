@@ -1,23 +1,25 @@
 # Fitness Tracker
 
-A full-stack web app for logging gym workouts by date. Pick a day on the calendar, log sets (exercise, weight, reps), and review your history grouped by exercise.
+A full-stack web app for logging gym workouts by date. Create an account, pick a day on the calendar, log sets (exercise, weight, reps), and review your own history grouped by exercise.
 
 **Live demo:** [fitness-tracker-delta-mauve.vercel.app](https://fitness-tracker-delta-mauve.vercel.app/)
 
 ## Features
 
+- **Accounts** — register and log in with email and password; each user only sees their own sets
+- **JWT auth** — the API issues a token after login/register; the frontend stores it and sends it on workout requests
 - **Date-based workout view** — browse and log workouts for any day via an interactive calendar
-- **Exercise catalog** — choose from 65+ pre-seeded gym exercises organized by muscle group
+- **Exercise catalog** — choose from 65+ pre-seeded gym exercises organized by muscle group (shared list)
 - **Set logging** — add, edit, and delete individual sets with weight and rep tracking
 - **Grouped display** — sets are grouped by exercise in expandable MUI accordions
-- **Form validation** — React Hook Form + Zod for client-side validation on set entry
+- **Form validation** — React Hook Form + Zod on the client; Zod on the API for auth and set payloads
 
 ## Tech Stack
 
 | Layer    | Technologies |
 | -------- | ------------ |
 | Frontend | React 19, TypeScript, Vite, MUI, React Hook Form, Zod |
-| Backend  | Node.js, Express 5, TypeScript, Typegoose |
+| Backend  | Node.js, Express 5, TypeScript, Typegoose, JWT, bcrypt, Zod |
 | Database | MongoDB Atlas |
 | Deploy   | Vercel (frontend), Railway (backend) |
 
@@ -27,13 +29,15 @@ A full-stack web app for logging gym workouts by date. Pick a day on the calenda
 Fitness-tracker/
 ├── frontend/          # React + Vite SPA
 │   └── src/
+│       ├── api/          # AuthService, ExerciseService, authFetch, etc.
 │       ├── components/   # WorkoutCard, SetTable, UpsertSetDialog, etc.
-│       ├── pages/        # HomePage
-│       └── ExerciseService.ts
+│       ├── pages/        # LoginPage, HomePage
+│       └── types/
 └── backend/           # Express REST API
     └── src/
-        ├── models/       # Exercise, ExerciseCatalog
-        ├── routes/       # /api/exercise, /api/exerciseCatalog
+        ├── models/       # User, Exercise, ExerciseCatalog
+        ├── middlewares/  # requireAuth, schemaValidator
+        ├── routes/       # /api/auth, /api/exercise, /api/exerciseCatalog
         └── scripts/      # seedExerciseCatalog, migrateExerciseCatalog
 ```
 
@@ -63,7 +67,16 @@ Create a `.env` file in `backend/`:
 ```env
 DATABASE_URL=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
 PORT=3000
+JWT_SECRET=<long random string>
 ```
+
+`JWT_SECRET` is required. The API will not start without it. Generate one locally, for example in PowerShell:
+
+```powershell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+```
+
+Do not commit `.env`.
 
 Seed the exercise catalog:
 
@@ -100,21 +113,39 @@ Start the dev server:
 npm run dev
 ```
 
-Open the URL shown in the terminal (typically `http://localhost:5173`).
+Open the URL shown in the terminal (typically `http://localhost:5173`). Register or log in, then log sets as before.
 
 ## API Endpoints
 
+### Auth (`/api/auth`)
+
+| Method | Route       | Auth   | Description |
+| ------ | ----------- | ------ | ----------- |
+| POST   | `/register` | No     | Create an account (`email`, `password` min 8 characters). Returns `{ token, user }`. |
+| POST   | `/login`    | No     | Sign in. Returns the same `{ token, user }` shape. |
+| GET    | `/me`       | Bearer | Current user (`_id`, `email`). |
+
+Send the token on protected routes as:
+
+```http
+Authorization: Bearer <token>
+```
+
 ### Exercises (`/api/exercise`)
+
+All of these require a valid Bearer token. Sets are scoped to the logged-in user.
 
 | Method | Route        | Description |
 | ------ | ------------ | ----------- |
-| GET    | `/`          | List exercises for a date range (`startDate`, `endDate` query params) |
-| GET    | `/:id`       | Get a single exercise |
-| POST   | `/`          | Create a set (`exerciseCatalog`, `weight`, `reps`) |
+| GET    | `/`          | List this user's sets for a date range (`startDate`, `endDate` query params) |
+| GET    | `/:id`       | Get a single set (404 if it belongs to someone else) |
+| POST   | `/`          | Create a set (`exerciseCatalog`, `weight`, `reps`). Owner is taken from the token. |
 | PATCH  | `/:id`       | Update weight and/or reps |
 | DELETE | `/:id`       | Delete a set |
 
 ### Exercise Catalog (`/api/exerciseCatalog`)
+
+Public shared catalog (no auth).
 
 | Method | Route | Description |
 | ------ | ----- | ----------- |
@@ -125,8 +156,8 @@ Open the URL shown in the terminal (typically `http://localhost:5173`).
 
 This project is deployed as a split full-stack app:
 
-- **Frontend (Vercel)** — set root directory to `frontend`, build command `npm run build`, output `dist`. Add env var `VITE_API_URL` pointing to your Railway backend URL.
-- **Backend (Railway)** — set root directory to `backend`, build command `npm run build`, start command `npm start`. Add `DATABASE_URL` and let Railway set `PORT`.
+- **Frontend (Vercel)** — set root directory to `frontend`, build command `npm run build`, output `dist`. Add env var `VITE_API_URL` pointing to your Railway backend URL. Do not put `JWT_SECRET` on Vercel.
+- **Backend (Railway)** — set root directory to `backend`, build command `npm run build`, start command `npm start`. Add `DATABASE_URL` and `JWT_SECRET`. Let Railway set `PORT`. Changing variables triggers a redeploy.
 - **Database (MongoDB Atlas)** — allow network access from your deployment IPs (or `0.0.0.0/0` for development). Run `npm run seed:catalog` against the production database once after first deploy.
 
 ## Scripts
