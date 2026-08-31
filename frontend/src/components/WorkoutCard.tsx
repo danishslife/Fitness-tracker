@@ -16,6 +16,7 @@ import { SetTable } from "./SetTable";
 import AddIcon from "@mui/icons-material/Add";
 import Button from "@mui/material/Button";
 
+
 interface WorkoutCardProps {
   onSaveFailure: (error: string) => void;
   onEditSuccess: () => void;
@@ -85,7 +86,7 @@ export const WorkoutCard = ({
     Record<string, boolean>
   >({});
   return (
-    <CardContent>
+    <CardContent sx={{ p: 1, }}>
       <Stack
         direction="row"
         spacing={2}

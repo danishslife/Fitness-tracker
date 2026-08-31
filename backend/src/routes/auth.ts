@@ -8,6 +8,8 @@ import { validateBody } from "../middlewares/schemaValidator";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const registerSchema = z.object({
+  firstName: z.string().trim(),
+  lastName: z.string().trim(),
   email: z.string().trim().toLowerCase().pipe(z.email("Invalid email address")),
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
@@ -45,15 +47,15 @@ router.post(
   "/register",
   validateBody(registerSchema),
   async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     try {
-      const user = new User({ email, password });
+      const user = new User({ firstName, lastName, email, password });
       await user.save();
 
       res.status(201).json({
         token: signToken(String(user._id)),
-        user: { _id: user._id, email: user.email },
+        user: { _id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName },
       });
     } catch (error: unknown) {
       if (isDuplicateKeyError(error)) {
@@ -90,7 +92,12 @@ router.post(
 
       res.json({
         token: signToken(String(user._id)),
-        user: { _id: user._id, email: user.email },
+        user: {
+          _id: user._id,
+          email: user.email,
+          lastName: user.lastName,
+          firstName: user.firstName,
+        },
       });
     } catch (error: unknown) {
       const message =
@@ -103,7 +110,12 @@ router.post(
 router.get("/me", requireAuth, (req: Request, res: Response) => {
   const user = res.locals["user"];
   res.json({
-    user: { _id: user._id, email: user.email },
+    user: {
+      _id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    },
   });
 });
 

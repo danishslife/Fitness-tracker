@@ -88,6 +88,7 @@ export const SetTable = ({
               <TableCell
                 colSpan={4}
                 sx={{
+                  p: 0,
                   borderBottom: 0,
                   bgcolor: "transparent",
                   py: 1,
@@ -98,6 +99,7 @@ export const SetTable = ({
                   size="small"
                   startIcon={<AddIcon />}
                   onClick={() => onAddSet(sets[0].exerciseCatalog)}
+                  sx={{ color: "text.primary" }}
                 >
                   Add Set
                 </Button>
