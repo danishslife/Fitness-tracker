@@ -1,6 +1,7 @@
 import type { ApiErrorResponse } from "../types/exercise";
-import type { AuthResponse } from "../types/auth";
+import type { AuthResponse, AuthUser } from "../types/auth";
 import { setToken } from "./authToken";
+import { authFetch } from "./authFetch";
 
 async function parseResponse<T>(res: Response): Promise<T> {
   const data = (await res.json()) as T | ApiErrorResponse;
@@ -15,16 +16,19 @@ async function parseResponse<T>(res: Response): Promise<T> {
 export async function register(
   email: string,
   password: string,
+  firstName: string,
+  lastName: string,
 ): Promise<AuthResponse> {
   const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, firstName, lastName }),
   });
   const data = await parseResponse<AuthResponse>(res);
   setToken(data.token);
   return data;
 }
+
 export async function login(
   email: string,
   password: string,
@@ -37,5 +41,11 @@ export async function login(
   const data = await parseResponse<AuthResponse>(res);
   setToken(data.token);
   return data;
+}
+
+export async function getUser(): Promise<AuthUser> {
+  const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/auth/me`);
+  const data = await parseResponse<{ user: AuthUser }>(res);
+  return data.user;
 }
 

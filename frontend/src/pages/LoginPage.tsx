@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import "../styles/loginPage.css";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Box from "@mui/material/Box";
@@ -16,9 +17,11 @@ const loginSchema = z.object({
 
 const registerSchema = loginSchema.extend({
   password: z.string().min(8, "Password must be at least 8 characters."),
+  firstName: z.string().trim().min(1, "First name is required"),
+  lastName: z.string().trim().min(1, "Last name is required"),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 type LoginPageProps = {
   onSuccess: () => void;
@@ -32,15 +35,22 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(mode === "register" ? registerSchema : loginSchema),
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(
+      mode === "register" ? registerSchema : loginSchema,
+    ) as unknown as Resolver<RegisterFormData>,
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: RegisterFormData) => {
     setError(null);
     try {
       if (mode === "register") {
-        await registerUser(data.email, data.password);
+        await registerUser(
+          data.email,
+          data.password,
+          data.firstName,
+          data.lastName,
+        );
       } else {
         await login(data.email, data.password);
       }
@@ -51,65 +61,182 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit(onSubmit)}
-      sx={{ maxWidth: 400, mx: "auto", mt: 8, textAlign: "left" }}
-    >
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        {mode === "login" ? "Log in" : "Create account"}
-      </Typography>
+    <div className="parent">
+      <Box className="Box" component="form" onSubmit={handleSubmit(onSubmit)}>
+        <Typography
+          className="header"
+          variant="h5"
+          sx={{ mb: 2, textAlign: "center", fontSize: 36, fontWeight: 500 }}
+        >
+          {mode === "login" ? "Login" : "Create an account"}
+        </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {mode === "register" && (
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <TextField
+              label="First name"
+              margin="normal"
+              autoComplete="given-name"
+              error={!!errors.firstName}
+              helperText={errors.firstName?.message}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  // borderRadius: "40px",
+                  color: "#fff", // typed text color
+                  "& fieldset": {
+                    border: "2px solid rgba(255, 255, 255, 0.2)",
+                  },
+                  "&:hover fieldset": {
+                    border: "2px solid rgba(255, 255, 255, 0.4)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    border: "2px solid #fff",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#fff", // floating label
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#fff", // label when focused
+                },
+              }}
+              {...register("firstName")}
+            ></TextField>
+            <TextField
+              label="Last Name"
+              margin="normal"
+              autoComplete="family-name"
+              error={!!errors.lastName}
+              helperText={errors.lastName?.message}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  // borderRadius: "40px",
+                  color: "#fff", // typed text color
+                  "& fieldset": {
+                    border: "2px solid rgba(255, 255, 255, 0.2)",
+                  },
+                  "&:hover fieldset": {
+                    border: "2px solid rgba(255, 255, 255, 0.4)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    border: "2px solid #fff",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#fff", // floating label
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#fff", // label when focused
+                },
+              }}
+              {...register("lastName")}
+            />
+          </Box>
+        )}
 
-      <TextField
-        label="Email"
-        fullWidth
-        margin="normal"
-        autoComplete="email"
-        error={!!errors.email}
-        helperText={errors.email?.message}
-        {...register("email")}
-      />
+        <TextField
+          label="Email"
+          fullWidth
+          margin="normal"
+          autoComplete="email"
+          error={!!errors.email}
+          helperText={errors.email?.message}
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              // borderRadius: "40px",
+              color: "#fff", // typed text color
+              "& fieldset": {
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+              },
+              "&:hover fieldset": {
+                border: "2px solid rgba(255, 255, 255, 0.4)",
+              },
+              "&.Mui-focused fieldset": {
+                border: "2px solid #fff",
+              },
+            },
+            "& .MuiInputLabel-root": {
+              color: "#fff", // floating label
+            },
+            "& .MuiInputLabel-root.Mui-focused": {
+              color: "#fff", // label when focused
+            },
+          }}
+          {...register("email")}
+        />
 
-      <TextField
-        label="Password"
-        type="password"
-        fullWidth
-        margin="normal"
-        autoComplete={mode === "login" ? "current-password" : "new-password"}
-        error={!!errors.password}
-        helperText={errors.password?.message}
-        {...register("password")}
-      />
+        <TextField
+          label="Password"
+          type="password"
+          fullWidth
+          margin="normal"
+          autoComplete={mode === "login" ? "current-password" : "new-password"}
+          error={!!errors.password}
+          helperText={errors.password?.message}
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              // borderRadius: "40px",
+              color: "#fff", // typed text color
+              "& fieldset": {
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+              },
+              "&:hover fieldset": {
+                border: "2px solid rgba(255, 255, 255, 0.4)",
+              },
+              "&.Mui-focused fieldset": {
+                border: "2px solid #fff",
+              },
+            },
+            "& .MuiInputLabel-root": {
+              color: "#fff", // floating label
+            },
+            "& .MuiInputLabel-root.Mui-focused": {
+              color: "#fff", // label when focused
+            },
+          }}
+          {...register("password")}
+        />
 
-      <Button
-        type="submit"
-        variant="contained"
-        fullWidth
-        sx={{ mt: 2 }}
-        disabled={isSubmitting}
-      >
-        {mode === "login" ? "Log in" : "Register"}
-      </Button>
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          sx={{
+            mt: 2,
+            bgcolor: "#fff",
+            color: "#000",
+            // borderRadius: "40px",
+            "&:hover": {
+              bgcolor: "#e0e0e0",
+            },
+          }}
+          disabled={isSubmitting}
+        >
+          {mode === "login" ? "Login" : "Register"}
+        </Button>
 
-      <Button
-        type="button"
-        fullWidth
-        sx={{ mt: 1 }}
-        onClick={() => {
-          setError(null);
-          setMode(mode === "login" ? "register" : "login");
-        }}
-      >
-        {mode === "login"
-          ? "Need an account? Register"
-          : "Already have an account? Log in"}
-      </Button>
-    </Box>
+        <Button
+          type="button"
+          fullWidth
+          sx={{
+            mt: 1,
+            color: "#fff",
+          }}
+          onClick={() => {
+            setError(null);
+            setMode(mode === "login" ? "register" : "login");
+          }}
+        >
+          {mode === "login"
+            ? "Need an account? Register"
+            : "Already have an account? Log in"}
+        </Button>
+      </Box>
+    </div>
   );
 }

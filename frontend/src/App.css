@@ -4,6 +4,7 @@ body {
   font-family: "Playpen Sans", cursive;
   background-color: #2f2b2b;
   color: #fff;
+  border: black solid;
 }
 
 .App {
@@ -62,40 +63,6 @@ button {
   justify-content: flex-start;
 }
 
-table {
-  border-collapse: collapse;
-}
-
-table td,
-table th {
-  border: 1px solid #ddd;
-  padding: 8px;
-  max-width: 350px;
-  word-wrap: break-word;
-  text-align: left;
-}
-
-table td {
-  font-size: 18px;
-  font-weight: 400;
-}
-
-table tr:hover {
-  background-color: #3f3c3c;
-}
-
-tr th {
-  min-width: 100px;
-}
-
-table th {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  text-align: left;
-  background-color: #04aa6d;
-  color: white;
-  font-weight: 600;
-}
 
 .actions {
   display: flex;

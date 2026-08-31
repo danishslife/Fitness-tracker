@@ -1,0 +1,40 @@
+.parent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: black solid;
+  min-height: 100vh;
+  background: url("../assets/LoginPage-Img.jpg") no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+.Box {
+  width: 100%;
+  max-width: 480px;
+  background: transparent;
+  box-sizing: border-box;
+  border: 2px solid rgb(255, 255, 255, .2);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 10px rgba(0, 0, 0, .2);
+  color: #fff;
+  border-radius: 20px;
+  margin: 0 16px;        
+  padding: 50px 40px;
+}
+
+
+@media (max-width: 600px) {
+  .Box {
+    max-width: 100%;
+    margin: 0 16px;
+    padding: 32px 20px;
+    border-radius: 16px;
+  }
+}
+
+/* very small phones */
+@media (max-width: 400px) {
+  .Box {
+    padding: 24px 16px;
+  }
+}

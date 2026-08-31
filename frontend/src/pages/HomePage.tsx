@@ -7,13 +7,8 @@ import { WorkoutCard } from "../components/WorkoutCard";
 import { WorkoutDatePicker } from "../components/WorkoutDatePicker";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import Button from "@mui/material/Button";
 
-type HomePageProps = {
-  onLogout: () => void;
-};
-
-export const HomePage = ({ onLogout }: HomePageProps) => {
+export const HomePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,9 +62,11 @@ export const HomePage = ({ onLogout }: HomePageProps) => {
   }, []);
 
   return (
+    
     <Box
       sx={{
-        mt: 16,
+        pt: 12,
+        mt: 2,
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-end",
@@ -80,14 +77,11 @@ export const HomePage = ({ onLogout }: HomePageProps) => {
         sx={{
           mb: 1,
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
           width: "100%",
         }}
       >
-        <Button type="button" onClick={onLogout}>
-          Log out
-        </Button>
         <WorkoutDatePicker
           selectedDate={selectedDate}
           onDateSelect={handleDateSelect}

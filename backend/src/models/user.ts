@@ -14,6 +14,10 @@ import bcrypt from "bcrypt";
 })
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class UserSchema {
+  @prop({ required: true, trim: true })
+  public firstName!: string;
+  @prop({ required: true, trim: true })
+  public lastName!: string;
   @prop({ required: true, unique: true, lowercase: true, trim: true })
   public email!: string;
   @prop({ required: true, select: false })

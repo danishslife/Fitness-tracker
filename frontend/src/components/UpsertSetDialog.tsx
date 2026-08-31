@@ -51,6 +51,16 @@ type UpsertSetDialogProps = {
 
 type SetFormData = z.infer<typeof setFormSchema>;
 
+const hideNumberSpinnersSx = {
+  "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
+    WebkitAppearance: "none",
+    margin: 0,
+  },
+  "& input[type=number]": {
+    MozAppearance: "textfield",
+  },
+};
+
 const emptyForm: SetFormData = {
   exerciseCatalog: "",
   weight: "",
@@ -274,6 +284,7 @@ export const UpsertSetDialog = ({
                 }}
                 onKeyDown={blockNegativeKeys}
                 slotProps={{ htmlInput: { min: 0 } }}
+                sx={hideNumberSpinnersSx}
               />
             )}
           />
@@ -301,6 +312,7 @@ export const UpsertSetDialog = ({
                 }}
                 onKeyDown={blockNegativeKeys}
                 slotProps={{ htmlInput: { min: 0 } }}
+                sx={hideNumberSpinnersSx}
               />
             )}
           />
