@@ -30,9 +30,16 @@ type NavbarProps = {
   onLogout: () => void;
 };
 
+function getInitials(firstName: string, lastName: string) {
+  const first = firstName.trim().charAt(0);
+  const last = lastName.trim().charAt(0);
+  return `${first}${last}`.toUpperCase();
+}
+
 export const Navbar = ({ onLogout }: NavbarProps) => {
   const { mode, toggleColorMode } = useColorMode();
   const [displayName, setDisplayName] = useState("");
+  const [initials, setInitials] = useState("");
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const now = new Date();
   const greeting = getGreeting(now.getHours());
@@ -52,6 +59,7 @@ export const Navbar = ({ onLogout }: NavbarProps) => {
         }
         const name = [user.firstName, user.lastName].filter(Boolean).join(" ");
         setDisplayName(name);
+        setInitials(getInitials(user.firstName ?? "", user.lastName ?? ""));
       },
       () => {
         if (cancelled) {
@@ -94,8 +102,16 @@ export const Navbar = ({ onLogout }: NavbarProps) => {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.8 }}>
-          <Avatar sx={{ bgcolor: "grey.700", width: 48, height: 48 }}>
-            <PersonIcon fontSize="medium" />
+          <Avatar
+            sx={{
+              width: 48,
+              height: 48,
+              fontSize: "1rem",
+              fontWeight: 700,
+            //   color: "#fff",
+            }}
+          >
+            {initials || <PersonIcon fontSize="medium" />}
           </Avatar>
           <Box sx={{ textAlign: "left" }}>
             <Typography variant="body2" sx={{ lineHeight: 1.3 }}>

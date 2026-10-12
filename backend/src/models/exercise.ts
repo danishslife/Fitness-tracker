@@ -22,17 +22,4 @@ class ExerciseSchema {
 
 export const Exercise = getModelForClass(ExerciseSchema);
 
-// async function seed() {
-//   try {
-//     // Optional: wipe existing data first
-//     await Course.deleteMany({});
-//     console.log("Cleared existing courses", courses.length);
 
-//     const created = await Course.insertMany(courses);
-//     console.log(`Seeded ${created.length} courses`);
-//   } catch (err) {
-//     console.error("Seeding failed:", err);
-//   }
-// }
-
-// seed();
