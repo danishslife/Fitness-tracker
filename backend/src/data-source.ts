@@ -16,7 +16,7 @@ export const AppDataSource = new DataSource({
   type: "postgres",
   url: databaseUrl,
   entities: [User, ExerciseCatalog, Exercise],
-  synchronize: true,
+  synchronize: false,
   logging: process.env.TYPEORM_LOGGING === "true",
   namingStrategy: new SnakeNamingStrategy(),
 });
