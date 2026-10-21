@@ -15,7 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 const setFormSchema = z.object({
-  exerciseCatalog: z.string().min(1, "Exercise is required"),
+  exerciseCatalog: z.number().int().positive("Exercise is required"),
   weight: z
     .string()
     .min(1, "Weight is required")
@@ -62,7 +62,7 @@ const hideNumberSpinnersSx = {
 };
 
 const emptyForm: SetFormData = {
-  exerciseCatalog: "",
+  exerciseCatalog: 0,
   weight: "",
   reps: "",
 };
@@ -75,7 +75,7 @@ const getInitialFormData = (
 ): SetFormData => {
   if (props.mode === "editSet") {
     return {
-      exerciseCatalog: props.exercise.exerciseCatalog._id,
+      exerciseCatalog: props.exercise.exerciseCatalog.id,
       weight: String(props.exercise.weight),
       reps: String(props.exercise.reps),
     };
@@ -83,7 +83,7 @@ const getInitialFormData = (
 
   if (props.mode === "addSet") {
     return {
-      exerciseCatalog: props.exerciseCatalog._id,
+      exerciseCatalog: props.exerciseCatalog.id,
       weight: "",
       reps: "",
     };
@@ -114,9 +114,9 @@ export const UpsertSetDialog = ({
 }: UpsertSetDialogProps) => {
   const mode = props.mode;
   const editExerciseId =
-    props.mode === "editSet" ? props.exercise._id : undefined;
+    props.mode === "editSet" ? props.exercise.id : undefined;
   const addCatalogId =
-    props.mode === "addSet" ? props.exerciseCatalog._id : undefined;
+    props.mode === "addSet" ? props.exerciseCatalog.id : undefined;
   const [catalogOptions, setCatalogOptions] = useState<ExerciseCatalog[]>([]);
   const {
     control,
@@ -226,7 +226,7 @@ export const UpsertSetDialog = ({
             control={control}
             render={({ field, fieldState }) => {
               const selectedExercise =
-                catalogOptions.find((item) => item._id === field.value) ??
+                catalogOptions.find((item) => item.id === field.value) ??
                 (props.mode === "editSet"
                   ? props.exercise.exerciseCatalog
                   : null) ??
@@ -239,11 +239,11 @@ export const UpsertSetDialog = ({
                   options={catalogOptions}
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) =>
-                    option._id === value._id
+                    option.id === value.id
                   }
                   value={selectedExercise ?? undefined}
                   onChange={(_event, newValue) => {
-                    field.onChange(newValue?._id ?? "");
+                    field.onChange(newValue?.id ?? 0);
                   }}
                   onBlur={field.onBlur}
                   renderInput={(params) => (

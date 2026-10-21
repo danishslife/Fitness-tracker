@@ -33,7 +33,7 @@ export async function getAllExercises(
   return parseResponse<ExercisesResponse>(res);
 }
 
-export async function getOneExercise(exerciseId: string): Promise<Exercise> {
+export async function getOneExercise(exerciseId: number): Promise<Exercise> {
   const res = await authFetch(
     `${import.meta.env.VITE_API_URL}/api/exercise/${exerciseId}`,
   );
@@ -57,8 +57,7 @@ export async function createOneExercise(
 }
 
 export async function updateOneExercise(
-  exerciseId: string,
-  // exerciseCatalog?: string,
+  exerciseId: number,
   weight?: number,
   reps?: number,
 ): Promise<Exercise> {
@@ -77,7 +76,7 @@ export async function updateOneExercise(
 }
 
 export async function deleteOneExercise(
-  exerciseId: string,
+  exerciseId: number,
 ): Promise<DeleteExerciseResponse> {
   const res = await authFetch(
     `${import.meta.env.VITE_API_URL}/api/exercise/${exerciseId}`,

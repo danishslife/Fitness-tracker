@@ -19,8 +19,8 @@ A full-stack web app for logging gym workouts by date. Create an account, pick a
 | Layer    | Technologies |
 | -------- | ------------ |
 | Frontend | React 19, TypeScript, Vite, MUI, React Hook Form, Zod |
-| Backend  | Node.js, Express 5, TypeScript, Typegoose, JWT, bcrypt, Zod |
-| Database | MongoDB Atlas |
+| Backend  | Node.js, Express 5, TypeScript, TypeORM, JWT, bcrypt, Zod |
+| Database | PostgreSQL |
 | Deploy   | Vercel (frontend), Railway (backend) |
 
 ## Project Structure
@@ -35,10 +35,11 @@ Fitness-tracker/
 │       └── types/
 └── backend/           # Express REST API
     └── src/
-        ├── models/       # User, Exercise, ExerciseCatalog
+        ├── entities/     # TypeORM User, Exercise, ExerciseCatalog
         ├── middlewares/  # requireAuth, schemaValidator
         ├── routes/       # /api/auth, /api/exercise, /api/exerciseCatalog
-        └── scripts/      # seedExerciseCatalog, migrateExerciseCatalog
+        ├── data-source.ts
+        └── scripts/      # seedExerciseCatalog
 ```
 
 ## Getting Started
@@ -46,7 +47,7 @@ Fitness-tracker/
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+
-- A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster (or local MongoDB)
+- PostgreSQL (local install, Docker, or a hosted provider such as Neon or Supabase)
 
 ### 1. Clone the repo
 
@@ -65,7 +66,7 @@ npm install
 Create a `.env` file in `backend/`:
 
 ```env
-DATABASE_URL=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
+DATABASE_URL=postgresql://<user>:<password>@localhost:5432/<dbname>
 PORT=3000
 JWT_SECRET=<long random string>
 ```
@@ -123,7 +124,7 @@ Open the URL shown in the terminal (typically `http://localhost:5173`). Register
 | ------ | ----------- | ------ | ----------- |
 | POST   | `/register` | No     | Create an account (`email`, `password` min 8 characters). Returns `{ token, user }`. |
 | POST   | `/login`    | No     | Sign in. Returns the same `{ token, user }` shape. |
-| GET    | `/me`       | Bearer | Current user (`_id`, `email`). |
+| GET    | `/me`       | Bearer | Current user (`id`, `email`, `firstName`, `lastName`). |
 
 Send the token on protected routes as:
 
@@ -139,7 +140,7 @@ All of these require a valid Bearer token. Sets are scoped to the logged-in user
 | ------ | ------------ | ----------- |
 | GET    | `/`          | List this user's sets for a date range (`startDate`, `endDate` query params) |
 | GET    | `/:id`       | Get a single set (404 if it belongs to someone else) |
-| POST   | `/`          | Create a set (`exerciseCatalog`, `weight`, `reps`). Owner is taken from the token. |
+| POST   | `/`          | Create a set (`exerciseCatalog` catalog id, `weight`, `reps`, `performedAt`). Owner is taken from the token. |
 | PATCH  | `/:id`       | Update weight and/or reps |
 | DELETE | `/:id`       | Delete a set |
 
@@ -158,7 +159,7 @@ This project is deployed as a split full-stack app:
 
 - **Frontend (Vercel)** — set root directory to `frontend`, build command `npm run build`, output `dist`. Add env var `VITE_API_URL` pointing to your Railway backend URL. Do not put `JWT_SECRET` on Vercel.
 - **Backend (Railway)** — set root directory to `backend`, build command `npm run build`, start command `npm start`. Add `DATABASE_URL` and `JWT_SECRET`. Let Railway set `PORT`. Changing variables triggers a redeploy.
-- **Database (MongoDB Atlas)** — allow network access from your deployment IPs (or `0.0.0.0/0` for development). Run `npm run seed:catalog` against the production database once after first deploy.
+- **Database (PostgreSQL)** — provision a Postgres instance on Railway (or similar), set `DATABASE_URL`, and apply your schema (migrations or manual DDL). Run `npm run seed:catalog` once after first deploy.
 
 ## Scripts
 

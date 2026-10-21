@@ -12,15 +12,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Exercise = void 0;
 const typegoose_1 = require("@typegoose/typegoose");
 const exerciseCatalog_1 = require("./exerciseCatalog");
+const user_1 = require("./user");
 let ExerciseSchema = class ExerciseSchema {
     exerciseCatalog;
+    user;
     weight;
     reps;
+    performedAt;
 };
 __decorate([
     (0, typegoose_1.prop)({ required: true, ref: () => exerciseCatalog_1.ExerciseCatalogSchema }),
     __metadata("design:type", Object)
 ], ExerciseSchema.prototype, "exerciseCatalog", void 0);
+__decorate([
+    (0, typegoose_1.prop)({ required: true, ref: () => user_1.UserSchema }),
+    __metadata("design:type", Object)
+], ExerciseSchema.prototype, "user", void 0);
 __decorate([
     (0, typegoose_1.prop)({ required: true }),
     __metadata("design:type", Number)
@@ -29,20 +36,12 @@ __decorate([
     (0, typegoose_1.prop)({ required: true }),
     __metadata("design:type", Number)
 ], ExerciseSchema.prototype, "reps", void 0);
+__decorate([
+    (0, typegoose_1.prop)({ required: true }),
+    __metadata("design:type", Date)
+], ExerciseSchema.prototype, "performedAt", void 0);
 ExerciseSchema = __decorate([
     (0, typegoose_1.modelOptions)({ schemaOptions: { timestamps: true } })
 ], ExerciseSchema);
 exports.Exercise = (0, typegoose_1.getModelForClass)(ExerciseSchema);
-// async function seed() {
-//   try {
-//     // Optional: wipe existing data first
-//     await Course.deleteMany({});
-//     console.log("Cleared existing courses", courses.length);
-//     const created = await Course.insertMany(courses);
-//     console.log(`Seeded ${created.length} courses`);
-//   } catch (err) {
-//     console.error("Seeding failed:", err);
-//   }
-// }
-// seed();
 //# sourceMappingURL=exercise.js.map

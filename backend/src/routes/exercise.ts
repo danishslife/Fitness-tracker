@@ -1,16 +1,22 @@
 import type { Request, Response, NextFunction } from "express";
 import express from "express";
 import { z } from "zod";
-import { Exercise } from "../models/exercise";
+import { Between } from "typeorm";
+import { Exercise } from "../entities/Exercise";
+import { ExerciseCatalog } from "../entities/ExerciseCatalog";
 import { validateBody } from "../middlewares/schemaValidator";
 import { requireAuth } from "../middlewares/requireAuth";
+import { AppDataSource } from "../data-source";
 
 const router = express.Router();
 
 router.use(requireAuth);
 
 const createSetSchema = z.object({
-  exerciseCatalog: z.string().min(1, "Exercise is required"),
+  exerciseCatalog: z
+    .number()
+    .int()
+    .positive("Exercise is required"),
   weight: z.number().positive("Weight must be greater than 0"),
   reps: z.number().positive("Reps must be greater than 0"),
   performedAt: z.iso.datetime(),
@@ -21,7 +27,17 @@ const editSetSchema = z.object({
   reps: z.number().positive("Reps must be greater than 0"),
 });
 
-//Getting all
+function exerciseRepository() {
+  return AppDataSource.getRepository(Exercise);
+}
+
+async function loadExerciseWithCatalog(id: number) {
+  return exerciseRepository().findOne({
+    where: { id },
+    relations: { exerciseCatalog: true },
+  });
+}
+
 router.get("/", async (req: Request, res: Response) => {
   try {
     const startDate = req.query["startDate"] as string;
@@ -35,12 +51,16 @@ router.get("/", async (req: Request, res: Response) => {
       return;
     }
 
-    const exercises = await Exercise.find({
-      user: res.locals["user"]._id,
-      performedAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
-    })
-      .populate("exerciseCatalog")
-      .sort({ performedAt: 1, createdAt: 1 });
+    const user = res.locals["user"];
+
+    const exercises = await exerciseRepository().find({
+      where: {
+        user: { id: user.id },
+        performedAt: Between(new Date(startDate), new Date(endDate)),
+      },
+      relations: { exerciseCatalog: true },
+      order: { performedAt: "ASC", createdAt: "ASC" },
+    });
 
     res.json({ exercises });
   } catch (error: unknown) {
@@ -50,28 +70,32 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-//Getting One
-router.get("/:id", getExercise, (req, res) => {
-  res.json(res.locals["exercise"]);
-});
-
-//Creating One
 router.post("/", validateBody(createSetSchema), async (req, res) => {
-  const exercise = new Exercise({
-    exerciseCatalog: req.body.exerciseCatalog,
-    weight: req.body.weight,
-    reps: req.body.reps,
-    performedAt: new Date(req.body.performedAt),
-    user: res.locals["user"]._id,
-  });
+  const user = res.locals["user"];
+  const catalogId = req.body.exerciseCatalog as number;
+
+  const catalog = await AppDataSource.getRepository(
+    ExerciseCatalog,
+  ).findOneBy({ id: catalogId });
+
+  if (!catalog) {
+    res.status(400).json({ message: "Invalid exercise catalog id" });
+    return;
+  }
+
   try {
-    if (!req.body.exerciseCatalog) {
-      res.status(400).json({ message: "exerciseCatalog is required" });
-      return;
-    }
-    const newExercise = await exercise.save();
-    await newExercise.populate("exerciseCatalog");
-    res.status(201).json(newExercise);
+    const saved = await exerciseRepository().save(
+      exerciseRepository().create({
+        weight: req.body.weight,
+        reps: req.body.reps,
+        performedAt: new Date(req.body.performedAt),
+        user,
+        exerciseCatalog: catalog,
+      }),
+    );
+
+    const withCatalog = await loadExerciseWithCatalog(saved.id);
+    res.status(201).json(withCatalog);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "An error occurred";
@@ -79,26 +103,28 @@ router.post("/", validateBody(createSetSchema), async (req, res) => {
   }
 });
 
-//Upating One
+router.get("/:id", getExercise, (_req, res) => {
+  res.json(res.locals["exercise"]);
+});
+
 router.patch(
   "/:id",
   validateBody(editSetSchema),
   getExercise,
   async (req, res) => {
-    // if (req.body.exerciseCatalog != null) {
-    //   res.locals["exercise"].exerciseCatalog = req.body.exerciseCatalog;
-    // }
+    const exercise = res.locals["exercise"] as Exercise;
+
     if (req.body.weight != null) {
-      res.locals["exercise"].weight = req.body.weight;
+      exercise.weight = req.body.weight;
     }
     if (req.body.reps != null) {
-      res.locals["exercise"].reps = req.body.reps;
+      exercise.reps = req.body.reps;
     }
 
     try {
-      const updatedExercise = await res.locals["exercise"].save();
-      await updatedExercise.populate("exerciseCatalog");
-      res.json(updatedExercise);
+      const updated = await exerciseRepository().save(exercise);
+      const reloaded = await loadExerciseWithCatalog(updated.id);
+      res.json(reloaded);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An error occurred";
@@ -107,10 +133,10 @@ router.patch(
   },
 );
 
-//Deleting One
-router.delete("/:id", getExercise, async (req, res) => {
+router.delete("/:id", getExercise, async (_req, res) => {
   try {
-    await res.locals["exercise"].deleteOne();
+    const exercise = res.locals["exercise"] as Exercise;
+    await exerciseRepository().remove(exercise);
     res.json({ message: "exercise deleted" });
   } catch (error) {
     const message =
@@ -119,59 +145,32 @@ router.delete("/:id", getExercise, async (req, res) => {
   }
 });
 
-// //Getting all
-// router.post("/duplicate", async (req: Request, res: Response) => {
-//   try {
-//     const startDate = req.body["startDate"] as string;
-//     const endDate = req.body["endDate"] as string;
-
-//     if (!startDate || !endDate) {
-//       res.status(400).json({
-//         message:
-//           "The 'startDate' and 'endDate' fields are required and cannot be empty.",
-//       });
-//       return;
-//     }
-
-//     const exercises = await Exercise.find({
-//       user: res.locals["user"]._id,
-//       createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) },
-//     })
-//       .populate("exerciseCatalog")
-//       .sort({ createdAt: 1 });
-
-//     res.json({ exercises });
-//   } catch (error: unknown) {
-//     const message =
-//       error instanceof Error ? error.message : "An error occurred";
-//     res.status(500).json({ message });
-//   }
-// });
-
 async function getExercise(req: Request, res: Response, next: NextFunction) {
-  let exercise;
+  const id = Number(req.params["id"]);
+
+  if (!Number.isInteger(id) || id < 1 || id > 2147483647) {
+    return res.status(400).json({ message: "Invalid ID format provided" });
+  }
+
   try {
-    exercise = await Exercise.findById(req.params.id).populate(
-      "exerciseCatalog",
-    );
+    const user = res.locals["user"];
+
+    const exercise = await exerciseRepository().findOne({
+      where: { id, user: { id: user.id } },
+      relations: { exerciseCatalog: true },
+    });
+
     if (exercise == null) {
       return res.status(404).json({ message: "exercise not found" });
     }
 
-    if (String(exercise.user) !== String(res.locals["user"]._id)) {
-      return res.status(404).json({ message: "exercise not found" });
-    }
+    res.locals["exercise"] = exercise;
+    next();
   } catch (error) {
-    if (error instanceof Error && error.name === "CastError") {
-      return res.status(400).json({ message: "Invalid ID format provided" });
-    }
     const message =
       error instanceof Error ? error.message : "An error occurred";
     return res.status(500).json({ message });
   }
-
-  res.locals["exercise"] = exercise;
-  next();
 }
 
 export default router;

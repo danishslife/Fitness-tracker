@@ -2,10 +2,12 @@ import type { Request, Response } from "express";
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { User } from "../models/user";
+import { User } from "../entities/User";
 import { z } from "zod";
 import { validateBody } from "../middlewares/schemaValidator";
 import { requireAuth } from "../middlewares/requireAuth";
+import { AppDataSource } from "../data-source";
+import { QueryFailedError } from "typeorm";
 
 const registerSchema = z.object({
   firstName: z.string().trim(),
@@ -34,14 +36,12 @@ function signToken(userId: string) {
 
 function isDuplicateKeyError(error: unknown): boolean {
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: number }).code === 11000
+    error instanceof QueryFailedError &&
+    (error.driverError as { code?: string }).code === "23505"
   );
 }
 
-// Register User
+const userRepository = AppDataSource.getRepository(User);
 
 router.post(
   "/register",
@@ -50,12 +50,23 @@ router.post(
     const { firstName, lastName, email, password } = req.body;
 
     try {
-      const user = new User({ firstName, lastName, email, password });
-      await user.save();
-
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await userRepository.save(
+        userRepository.create({
+          firstName,
+          lastName,
+          email,
+          password: hashedPassword,
+        }),
+      );
       res.status(201).json({
-        token: signToken(String(user._id)),
-        user: { _id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName },
+        token: signToken(String(user.id)),
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
       });
     } catch (error: unknown) {
       if (isDuplicateKeyError(error)) {
@@ -76,7 +87,7 @@ router.post(
     const { email, password } = req.body;
 
     try {
-      const user = await User.findOne({ email }).select("+password");
+      const user = await userRepository.findOneBy({ email });
 
       if (!user) {
         res.status(401).json({ message: "Invalid email or password" });
@@ -91,9 +102,9 @@ router.post(
       }
 
       res.json({
-        token: signToken(String(user._id)),
+        token: signToken(String(user.id)),
         user: {
-          _id: user._id,
+          id: user.id,
           email: user.email,
           lastName: user.lastName,
           firstName: user.firstName,
@@ -107,11 +118,11 @@ router.post(
   },
 );
 
-router.get("/me", requireAuth, (req: Request, res: Response) => {
+router.get("/me", requireAuth, (_req: Request, res: Response) => {
   const user = res.locals["user"];
   res.json({
     user: {
-      _id: user._id,
+      id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../models/user";
+import { User } from "../entities/User";
+import { AppDataSource } from "../data-source";
 
 export async function requireAuth(
   req: Request,
@@ -35,7 +36,13 @@ export async function requireAuth(
       return;
     }
 
-    const user = await User.findById(payload.userId);
+    const id = Number(payload.userId);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    const user = await AppDataSource.getRepository(User).findOneBy({ id });
     if (!user) {
       res.status(401).json({ message: "Authentication required" });
       return;
@@ -43,7 +50,7 @@ export async function requireAuth(
 
     res.locals["user"] = user;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({ message: "Authentication required" });
   }
 }

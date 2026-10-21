@@ -1,5 +1,5 @@
 export interface Exercise {
-  _id: string;
+  id: number;
   exerciseCatalog: ExerciseCatalog;
   weight: number;
   reps: number;
@@ -7,20 +7,19 @@ export interface Exercise {
 }
 
 export interface ExerciseCatalog {
-  _id: string;
+  id: number;
   name: string;
   targetMuscleGroup: string;
 }
 
 export type CreateExerciseData = {
-  exerciseCatalog: string; // catalog _id
+  exerciseCatalog: number;
   weight: number;
   reps: number;
   performedAt: string;
 };
 
 export type UpdateExerciseData = {
-  // exerciseCatalog?: string;
   weight?: number;
   reps?: number;
 };

@@ -23,7 +23,7 @@ export async function getAllExerciseCatalog(): Promise<ExercisesCatalogResponse>
 }
 
 export async function createOneExerciseCatalog(
-  exerciseCatalog: Omit<ExerciseCatalog, "_id">,
+  exerciseCatalog: Omit<ExerciseCatalog, "id">,
 ): Promise<ExerciseCatalog> {
   const { name, targetMuscleGroup } = exerciseCatalog;
   const res = await fetch(`${import.meta.env.VITE_API_URL}/api/exerciseCatalog/`, {

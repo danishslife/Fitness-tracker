@@ -1,18 +1,36 @@
-import type { Request, Response } from "express";
-import { ExerciseCatalog } from "../models/exerciseCatalog";
 import express from "express";
+import type { Request, Response } from "express";
+import { QueryFailedError } from "typeorm";
+import type { FindOptionsOrder } from "typeorm";
+import { AppDataSource } from "../data-source";
+import { ExerciseCatalog } from "../entities/ExerciseCatalog";
+
 const router = express.Router();
 
-//Getting All
+const sortableFields = [
+  "id",
+  "name",
+  "targetMuscleGroup",
+  "createdAt",
+  "updatedAt",
+];
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const sortField = (req.query["sort"] as string) || "name";
+    const requestedField = (req.query["sort"] as string) || "name";
+    const sortField = sortableFields.includes(requestedField)
+      ? requestedField
+      : "name";
     const sortOrder = parseInt((req.query["sortOrder"] as string) || "1");
+    const direction = sortOrder === -1 ? "DESC" : "ASC";
 
-    const exerciseCatalog = await ExerciseCatalog.find().sort({
-      [sortField]: sortOrder as 1 | -1,
-    });
+    const order: FindOptionsOrder<ExerciseCatalog> = {
+      [sortField]: direction,
+    };
+
+    const exerciseCatalog = await AppDataSource.getRepository(
+      ExerciseCatalog,
+    ).find({ order });
 
     res.status(200).json({ exerciseCatalog });
   } catch (error) {
@@ -23,7 +41,6 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-//Creating One
 router.post("/", async (req: Request, res: Response) => {
   const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
   const targetMuscleGroup =
@@ -40,12 +57,23 @@ router.post("/", async (req: Request, res: Response) => {
   }
 
   try {
-    const newExerciseCatalog = await ExerciseCatalog.create({
-      name,
-      targetMuscleGroup,
-    });
+    const exerciseCatalogRepository =
+      AppDataSource.getRepository(ExerciseCatalog);
+    const newExerciseCatalog = await exerciseCatalogRepository.save(
+      exerciseCatalogRepository.create({ name, targetMuscleGroup }),
+    );
     res.status(201).json(newExerciseCatalog);
   } catch (error) {
+    if (
+      error instanceof QueryFailedError &&
+      (error.driverError as { code?: string }).code === "23505"
+    ) {
+      res
+        .status(409)
+        .json({ message: `An exercise named '${name}' already exists.` });
+      return;
+    }
+
     const message =
       error instanceof Error ? error.message : "Unknown server error";
 

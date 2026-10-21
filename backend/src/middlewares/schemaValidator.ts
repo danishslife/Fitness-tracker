@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import z from "zod";
+import type { z } from "zod";
 
-export const validateBody = (schema: z.ZodObject) => {
+export const validateBody = (schema: z.ZodType) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
 
@@ -12,7 +12,6 @@ export const validateBody = (schema: z.ZodObject) => {
       return res.status(400).json({ message });
     }
 
-    // Overwrite req.body with the sanitized/parsed data (removes unregistered fields)
     req.body = result.data;
     next();
   };
