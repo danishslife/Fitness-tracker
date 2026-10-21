@@ -31,7 +31,7 @@ export const SetTable = ({
   onAddSet,
   onSaveFailure,
 }: SetTableProps) => {
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (!id) return;
     try {
       await deleteOneExercise(id);
@@ -70,14 +70,14 @@ export const SetTable = ({
           </TableHead>
           <TableBody>
             {sets.map((item, index) => (
-              <TableRow key={item._id}>
+              <TableRow key={item.id}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{item.weight}</TableCell>
                 <TableCell>{item.reps}</TableCell>
                 <TableCell align="right">
                   <SetRowMenu
                     onEdit={() => onEdit(item)}
-                    onDelete={() => handleDelete(item._id)}
+                    onDelete={() => handleDelete(item.id)}
                   />
                 </TableCell>
               </TableRow>

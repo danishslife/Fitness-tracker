@@ -42,7 +42,7 @@ export const WorkoutCard = ({
   >(null);
   const groupedExercise = useMemo((): Record<string, Exercise[]> => {
     return exercise.reduce<Record<string, Exercise[]>>((acc, item) => {
-      const key = item.exerciseCatalog?._id;
+      const key = item.exerciseCatalog?.id;
       if (!key) {
         return acc;
       }
