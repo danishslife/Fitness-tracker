@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
-import { getAllExercises } from "../api/ExerciseService";
-import type { Exercise } from "../types/exercise";
+import { getAllWorkoutSets } from "../api/WorkoutSetService";
+import type { WorkoutSet } from "../types/workoutSet";
 import { WorkoutCard } from "../components/WorkoutCard";
 import { WorkoutDatePicker } from "../components/WorkoutDatePicker";
 import Box from "@mui/material/Box";
@@ -10,14 +10,14 @@ import Card from "@mui/material/Card";
 
 export const HomePage = () => {
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<Exercise[]>([]);
+  const [data, setData] = useState<WorkoutSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  const fetchAllExercises = useCallback(async () => {
+  const fetchAllWorkoutSets = useCallback(async () => {
     try {
-      const { exercises } = await getAllExercises(selectedDate);
-      setData(exercises);
+      const { workoutSets } = await getAllWorkoutSets(selectedDate);
+      setData(workoutSets);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -29,12 +29,12 @@ export const HomePage = () => {
   useEffect(() => {
     let cancelled = false;
 
-    void getAllExercises(selectedDate).then(
-      ({ exercises }) => {
+    void getAllWorkoutSets(selectedDate).then(
+      ({ workoutSets }) => {
         if (cancelled) {
           return;
         }
-        setData(exercises);
+        setData(workoutSets);
         setError(null);
         setLoading(false);
       },
@@ -62,7 +62,6 @@ export const HomePage = () => {
   }, []);
 
   return (
-    
     <Box
       sx={{
         pt: 12,
@@ -94,10 +93,10 @@ export const HomePage = () => {
         {!loading && (
           <WorkoutCard
             onSaveFailure={handleFailure}
-            onEditSuccess={() => void fetchAllExercises()}
-            onDeleteSuccess={() => void fetchAllExercises()}
-            onSaveSuccess={() => void fetchAllExercises()}
-            exercise={data}
+            onEditSuccess={() => void fetchAllWorkoutSets()}
+            onDeleteSuccess={() => void fetchAllWorkoutSets()}
+            onSaveSuccess={() => void fetchAllWorkoutSets()}
+            workoutSets={data}
             selectedDate={selectedDate}
           />
         )}

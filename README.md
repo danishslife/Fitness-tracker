@@ -35,9 +35,9 @@ Fitness-tracker/
 │       └── types/
 └── backend/           # Express REST API
     └── src/
-        ├── entities/     # TypeORM User, Exercise, ExerciseCatalog
+        ├── entities/     # TypeORM User, Exercise, WorkoutSet
         ├── middlewares/  # requireAuth, schemaValidator
-        ├── routes/       # /api/auth, /api/exercise, /api/exerciseCatalog
+        ├── routes/       # /api/auth, /api/exercise, /api/workoutSet
         ├── data-source.ts
         └── scripts/      # seedExerciseCatalog
 ```
@@ -134,24 +134,24 @@ Authorization: Bearer <token>
 
 ### Exercises (`/api/exercise`)
 
-All of these require a valid Bearer token. Sets are scoped to the logged-in user.
-
-| Method | Route        | Description |
-| ------ | ------------ | ----------- |
-| GET    | `/`          | List this user's sets for a date range (`startDate`, `endDate` query params) |
-| GET    | `/:id`       | Get a single set (404 if it belongs to someone else) |
-| POST   | `/`          | Create a set (`exerciseCatalog` catalog id, `weight`, `reps`, `performedAt`). Owner is taken from the token. |
-| PATCH  | `/:id`       | Update weight and/or reps |
-| DELETE | `/:id`       | Delete a set |
-
-### Exercise Catalog (`/api/exerciseCatalog`)
-
-Public shared catalog (no auth).
+Catalog entries (shared seed data plus per-user custom exercises). Requires a valid Bearer token.
 
 | Method | Route | Description |
 | ------ | ----- | ----------- |
-| GET    | `/`   | List all catalog exercises |
-| POST   | `/`   | Add a custom exercise to the catalog |
+| GET    | `/`   | List exercises available to the logged-in user |
+| POST   | `/`   | Add a custom exercise (`name`, `targetMuscleGroup`) |
+
+### Workout sets (`/api/workoutSet`)
+
+Logged sets are scoped to the logged-in user. Requires a valid Bearer token.
+
+| Method | Route        | Description |
+| ------ | ------------ | ----------- |
+| GET    | `/`          | List sets for a date range (`startDate`, `endDate` query params) |
+| GET    | `/:id`       | Get a single set (404 if it belongs to someone else) |
+| POST   | `/`          | Create a set (`exercise` id, `weight`, `reps`, `performedAt`) |
+| PATCH  | `/:id`       | Update weight and/or reps |
+| DELETE | `/:id`       | Delete a set |
 
 ## Deployment
 

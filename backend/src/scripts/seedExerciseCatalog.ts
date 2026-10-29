@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import "dotenv/config";
 import { AppDataSource } from "../data-source";
-import { ExerciseCatalog } from "../entities/ExerciseCatalog";
+import { Exercise } from "../entities/Exercise";
 
 const sampleCatalog = [
   { name: "Bench Press", targetMuscleGroup: "Chest" },
@@ -76,7 +76,7 @@ const sampleCatalog = [
 async function seed() {
   await AppDataSource.initialize();
 
-  const repo = AppDataSource.getRepository(ExerciseCatalog);
+  const repo = AppDataSource.getRepository(Exercise);
   let inserted = 0;
   let skipped = 0;
 

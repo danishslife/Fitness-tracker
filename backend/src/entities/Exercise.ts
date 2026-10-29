@@ -4,25 +4,23 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
   ManyToOne,
   JoinColumn,
 } from "typeorm";
+import { WorkoutSet } from "./WorkoutSet";
 import { User } from "./User";
-import { ExerciseCatalog } from "./ExerciseCatalog";
 
-@Entity("exercise")
+@Entity("exercise_catalog")
 export class Exercise {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: "integer", nullable: false })
-  weight!: number;
+  @Column({ type: "text", nullable: false })
+  name!: string;
 
-  @Column({ type: "integer", nullable: false })
-  reps!: number;
-
-  @Column({ name: "performed_at", type: "timestamptz", nullable: false })
-  performedAt!: Date;
+  @Column({ name: "target_muscle_group", type: "text", nullable: false })
+  targetMuscleGroup!: string;
 
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
@@ -30,20 +28,10 @@ export class Exercise {
   @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt!: Date;
 
-  @ManyToOne(() => User, (user) => user.exercises, {
-    onDelete: "CASCADE",
-    nullable: false,
-  })
+  @ManyToOne(() => User, { nullable: true, onDelete: "CASCADE" })
   @JoinColumn({ name: "user_id" })
-  user!: User;
+  user!: User | null;
 
-  @ManyToOne(
-    () => ExerciseCatalog,
-    (exerciseCatalog) => exerciseCatalog.exercises,
-    {
-      nullable: false,
-    },
-  )
-  @JoinColumn({ name: "exercise_catalog_id" })
-  exerciseCatalog!: ExerciseCatalog;
+  @OneToMany(() => WorkoutSet, (workoutSet) => workoutSet.exercise)
+  workoutSets!: WorkoutSet[];
 }

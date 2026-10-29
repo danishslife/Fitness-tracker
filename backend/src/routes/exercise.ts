@@ -1,176 +1,95 @@
-import type { Request, Response, NextFunction } from "express";
 import express from "express";
-import { z } from "zod";
-import { Between } from "typeorm";
-import { Exercise } from "../entities/Exercise";
-import { ExerciseCatalog } from "../entities/ExerciseCatalog";
-import { validateBody } from "../middlewares/schemaValidator";
-import { requireAuth } from "../middlewares/requireAuth";
+import type { Request, Response } from "express";
+import { QueryFailedError, IsNull } from "typeorm";
+import type { FindOptionsOrder } from "typeorm";
 import { AppDataSource } from "../data-source";
+import { Exercise } from "../entities/Exercise";
+import { requireAuth } from "../middlewares/requireAuth";
+import type { User } from "../entities/User";
 
 const router = express.Router();
 
 router.use(requireAuth);
 
-const createSetSchema = z.object({
-  exerciseCatalog: z
-    .number()
-    .int()
-    .positive("Exercise is required"),
-  weight: z.number().positive("Weight must be greater than 0"),
-  reps: z.number().positive("Reps must be greater than 0"),
-  performedAt: z.iso.datetime(),
-});
-
-const editSetSchema = z.object({
-  weight: z.number().positive("Weight must be greater than 0"),
-  reps: z.number().positive("Reps must be greater than 0"),
-});
-
-function exerciseRepository() {
-  return AppDataSource.getRepository(Exercise);
-}
-
-async function loadExerciseWithCatalog(id: number) {
-  return exerciseRepository().findOne({
-    where: { id },
-    relations: { exerciseCatalog: true },
-  });
-}
+const sortableFields = [
+  "id",
+  "name",
+  "targetMuscleGroup",
+  "createdAt",
+  "updatedAt",
+];
 
 router.get("/", async (req: Request, res: Response) => {
+  const user = res.locals["user"] as User;
+
   try {
-    const startDate = req.query["startDate"] as string;
-    const endDate = req.query["endDate"] as string;
+    const requestedField = (req.query["sort"] as string) || "name";
+    const sortField = sortableFields.includes(requestedField)
+      ? requestedField
+      : "name";
+    const sortOrder = parseInt((req.query["sortOrder"] as string) || "1");
+    const direction = sortOrder === -1 ? "DESC" : "ASC";
 
-    if (!startDate || !endDate) {
-      res.status(400).json({
-        message:
-          "The 'startDate' and 'endDate' fields are required and cannot be empty.",
-      });
-      return;
-    }
+    const order: FindOptionsOrder<Exercise> = {
+      [sortField]: direction,
+    };
 
-    const user = res.locals["user"];
-
-    const exercises = await exerciseRepository().find({
-      where: {
-        user: { id: user.id },
-        performedAt: Between(new Date(startDate), new Date(endDate)),
-      },
-      relations: { exerciseCatalog: true },
-      order: { performedAt: "ASC", createdAt: "ASC" },
+    const exercises = await AppDataSource.getRepository(Exercise).find({
+      where: [{ user: IsNull() }, { user: { id: user.id } }],
+      order,
     });
 
-    res.json({ exercises });
-  } catch (error: unknown) {
+    res.status(200).json({ exercises });
+  } catch (error) {
     const message =
-      error instanceof Error ? error.message : "An error occurred";
+      error instanceof Error ? error.message : "Unknown server error";
+
     res.status(500).json({ message });
   }
 });
 
-router.post("/", validateBody(createSetSchema), async (req, res) => {
-  const user = res.locals["user"];
-  const catalogId = req.body.exerciseCatalog as number;
+router.post("/", async (req: Request, res: Response) => {
+  const user = res.locals["user"] as User;
+  const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
+  const targetMuscleGroup =
+    typeof req.body.targetMuscleGroup === "string"
+      ? req.body.targetMuscleGroup.trim()
+      : "";
 
-  const catalog = await AppDataSource.getRepository(
-    ExerciseCatalog,
-  ).findOneBy({ id: catalogId });
-
-  if (!catalog) {
-    res.status(400).json({ message: "Invalid exercise catalog id" });
+  if (!name || !targetMuscleGroup) {
+    res.status(400).json({
+      message:
+        "The 'name' and 'targetMuscleGroup' fields are required and cannot be empty.",
+    });
     return;
   }
 
   try {
-    const saved = await exerciseRepository().save(
-      exerciseRepository().create({
-        weight: req.body.weight,
-        reps: req.body.reps,
-        performedAt: new Date(req.body.performedAt),
+    const exerciseRepository = AppDataSource.getRepository(Exercise);
+    const newExercise = await exerciseRepository.save(
+      exerciseRepository.create({
+        name,
+        targetMuscleGroup,
         user,
-        exerciseCatalog: catalog,
       }),
     );
-
-    const withCatalog = await loadExerciseWithCatalog(saved.id);
-    res.status(201).json(withCatalog);
+    res.status(201).json(newExercise);
   } catch (error) {
+    if (
+      error instanceof QueryFailedError &&
+      (error.driverError as { code?: string }).code === "23505"
+    ) {
+      res
+        .status(409)
+        .json({ message: `An exercise named '${name}' already exists.` });
+      return;
+    }
+
     const message =
-      error instanceof Error ? error.message : "An error occurred";
-    res.status(400).json({ message });
-  }
-});
+      error instanceof Error ? error.message : "Unknown server error";
 
-router.get("/:id", getExercise, (_req, res) => {
-  res.json(res.locals["exercise"]);
-});
-
-router.patch(
-  "/:id",
-  validateBody(editSetSchema),
-  getExercise,
-  async (req, res) => {
-    const exercise = res.locals["exercise"] as Exercise;
-
-    if (req.body.weight != null) {
-      exercise.weight = req.body.weight;
-    }
-    if (req.body.reps != null) {
-      exercise.reps = req.body.reps;
-    }
-
-    try {
-      const updated = await exerciseRepository().save(exercise);
-      const reloaded = await loadExerciseWithCatalog(updated.id);
-      res.json(reloaded);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "An error occurred";
-      res.status(400).json({ message });
-    }
-  },
-);
-
-router.delete("/:id", getExercise, async (_req, res) => {
-  try {
-    const exercise = res.locals["exercise"] as Exercise;
-    await exerciseRepository().remove(exercise);
-    res.json({ message: "exercise deleted" });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "An error occurred";
     res.status(500).json({ message });
   }
 });
-
-async function getExercise(req: Request, res: Response, next: NextFunction) {
-  const id = Number(req.params["id"]);
-
-  if (!Number.isInteger(id) || id < 1 || id > 2147483647) {
-    return res.status(400).json({ message: "Invalid ID format provided" });
-  }
-
-  try {
-    const user = res.locals["user"];
-
-    const exercise = await exerciseRepository().findOne({
-      where: { id, user: { id: user.id } },
-      relations: { exerciseCatalog: true },
-    });
-
-    if (exercise == null) {
-      return res.status(404).json({ message: "exercise not found" });
-    }
-
-    res.locals["exercise"] = exercise;
-    next();
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "An error occurred";
-    return res.status(500).json({ message });
-  }
-}
 
 export default router;

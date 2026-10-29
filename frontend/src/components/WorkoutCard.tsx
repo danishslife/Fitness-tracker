@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { WorkoutSet } from "../types/workoutSet";
 import type { Exercise } from "../types/exercise";
 import {
   UpsertSetDialog,
@@ -16,33 +17,29 @@ import { SetTable } from "./SetTable";
 import AddIcon from "@mui/icons-material/Add";
 import Button from "@mui/material/Button";
 
-
 interface WorkoutCardProps {
   onSaveFailure: (error: string) => void;
   onEditSuccess: () => void;
   onDeleteSuccess: () => void;
   onSaveSuccess: () => void;
-  exercise: Exercise[];
+  workoutSets: WorkoutSet[];
   selectedDate: Date;
 }
 
 export const WorkoutCard = ({
   onSaveFailure,
-  // onEditSuccess,
   onDeleteSuccess,
   onSaveSuccess,
-  exercise,
+  workoutSets,
   selectedDate,
 }: WorkoutCardProps) => {
   const [mode, setMode] = useState<UpsertSetDialogMode | null>(null);
   const [open, setOpen] = useState(false);
+  const [editWorkoutSet, setEditWorkoutSet] = useState<WorkoutSet | null>(null);
   const [editExercise, setEditExercise] = useState<Exercise | null>(null);
-  const [editCatalog, setCatalog] = useState<
-    Exercise["exerciseCatalog"] | null
-  >(null);
-  const groupedExercise = useMemo((): Record<string, Exercise[]> => {
-    return exercise.reduce<Record<string, Exercise[]>>((acc, item) => {
-      const key = item.exerciseCatalog?.id;
+  const groupedByExercise = useMemo((): Record<string, WorkoutSet[]> => {
+    return workoutSets.reduce<Record<string, WorkoutSet[]>>((acc, item) => {
+      const key = item.exercise?.id;
       if (!key) {
         return acc;
       }
@@ -52,25 +49,25 @@ export const WorkoutCard = ({
       acc[key].push(item);
       return acc;
     }, {});
-  }, [exercise]);
+  }, [workoutSets]);
 
-  function handleEdit(item: Exercise) {
+  function handleEdit(item: WorkoutSet) {
     if (!item) {
       return;
     }
 
     setMode("editSet");
-    setEditExercise(item);
+    setEditWorkoutSet(item);
     setOpen(true);
   }
 
-  function handleAddSet(exerciseCatalog: Exercise["exerciseCatalog"]) {
+  function handleAddSet(exercise: Exercise) {
     setMode("addSet");
-    setCatalog(exerciseCatalog);
+    setEditExercise(exercise);
     setOpen(true);
   }
 
-  function handleAddExercise() {
+  function handleLogWorkout() {
     setMode("log");
     setOpen(true);
   }
@@ -78,15 +75,15 @@ export const WorkoutCard = ({
   const handleClose = () => {
     setOpen(false);
     setMode(null);
+    setEditWorkoutSet(null);
     setEditExercise(null);
-    setCatalog(null);
   };
 
-  const [expandedByCatalogId, setExpandedByCatalogId] = useState<
+  const [expandedByExerciseId, setExpandedByExerciseId] = useState<
     Record<string, boolean>
   >({});
   return (
-    <CardContent sx={{ p: 1, }}>
+    <CardContent sx={{ p: 1 }}>
       <Stack
         direction="row"
         spacing={2}
@@ -96,25 +93,25 @@ export const WorkoutCard = ({
         }}
       >
         <CardHeader title="My Workouts" />
-        {mode === "editSet" && editExercise && (
+        {mode === "editSet" && editWorkoutSet && (
           <UpsertSetDialog
             onSaveFailure={onSaveFailure}
             onSaveSuccess={onSaveSuccess}
             open={open}
             onClose={handleClose}
             mode="editSet"
-            exercise={editExercise}
+            workoutSet={editWorkoutSet}
             selectedDate={selectedDate}
           />
         )}
-        {mode === "addSet" && editCatalog && (
+        {mode === "addSet" && editExercise && (
           <UpsertSetDialog
             onSaveFailure={onSaveFailure}
             onSaveSuccess={onSaveSuccess}
             open={open}
             onClose={handleClose}
             mode="addSet"
-            exerciseCatalog={editCatalog}
+            exercise={editExercise}
             selectedDate={selectedDate}
           />
         )}
@@ -128,39 +125,39 @@ export const WorkoutCard = ({
             selectedDate={selectedDate}
           />
         )}
-        <Button variant="contained" onClick={handleAddExercise}>
+        <Button variant="contained" onClick={handleLogWorkout}>
           <AddIcon />
         </Button>
       </Stack>
 
-      {Object.keys(groupedExercise).length > 0 &&
-        Object.entries(groupedExercise).map(([catalogId, exercises]) => (
+      {Object.keys(groupedByExercise).length > 0 &&
+        Object.entries(groupedByExercise).map(([exerciseId, sets]) => (
           <Accordion
-            key={catalogId}
-            expanded={expandedByCatalogId[catalogId] ?? false}
+            key={exerciseId}
+            expanded={expandedByExerciseId[exerciseId] ?? false}
             onChange={(_event, isExpanded) => {
-              setExpandedByCatalogId((prev) => ({
+              setExpandedByExerciseId((prev) => ({
                 ...prev,
-                [catalogId]: isExpanded,
+                [exerciseId]: isExpanded,
               }));
             }}
             sx={{ width: "100%" }}
           >
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
-              aria-controls={`${catalogId}-panel1-content`}
-              id={`${catalogId}-panel1-header`}
+              aria-controls={`${exerciseId}-panel1-content`}
+              id={`${exerciseId}-panel1-header`}
             >
               <Typography component="div">
-                {exercises[0].exerciseCatalog?.name ?? ""} |{" "}
-                {`${exercises.length} ${exercises.length > 1 ? "Sets" : "Set"}`}{" "}
-                | {exercises[0].exerciseCatalog?.targetMuscleGroup ?? ""}
+                {sets[0].exercise?.name ?? ""} |{" "}
+                {`${sets.length} ${sets.length > 1 ? "Sets" : "Set"}`} |{" "}
+                {sets[0].exercise?.targetMuscleGroup ?? ""}
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
               <SetTable
                 onSaveFailure={onSaveFailure}
-                sets={exercises}
+                sets={sets}
                 onEdit={handleEdit}
                 onDeleteSuccess={onDeleteSuccess}
                 onAddSet={handleAddSet}

@@ -7,15 +7,20 @@ import IconButton from "@mui/material/IconButton";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import type { Exercise, ExerciseCatalog } from "../types/exercise";
-import { createOneExercise, updateOneExercise } from "../api/ExerciseService";
-import { getAllExerciseCatalog } from "../api/ExerciseCatalogService";
+import type { Exercise } from "../types/exercise";
+import type { WorkoutSet } from "../types/workoutSet";
+import { AddCustomExercise } from "./AddCustomExercise";
+import {
+  createOneWorkoutSet,
+  updateOneWorkoutSet,
+} from "../api/WorkoutSetService";
+import { getAllExercises } from "../api/ExerciseService";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 const setFormSchema = z.object({
-  exerciseCatalog: z.number().int().positive("Exercise is required"),
+  exercise: z.number().int().positive("Exercise is required"),
   weight: z
     .string()
     .min(1, "Weight is required")
@@ -38,11 +43,11 @@ type UpsertSetDialogProps = {
 } & (
   | {
       mode: "editSet";
-      exercise: Exercise;
+      workoutSet: WorkoutSet;
     }
   | {
       mode: "addSet";
-      exerciseCatalog: Exercise["exerciseCatalog"];
+      exercise: Exercise;
     }
   | {
       mode: "log";
@@ -62,28 +67,28 @@ const hideNumberSpinnersSx = {
 };
 
 const emptyForm: SetFormData = {
-  exerciseCatalog: 0,
+  exercise: 0,
   weight: "",
   reps: "",
 };
 
 const getInitialFormData = (
   props:
-    | { mode: "editSet"; exercise: Exercise }
-    | { mode: "addSet"; exerciseCatalog: Exercise["exerciseCatalog"] }
+    | { mode: "editSet"; workoutSet: WorkoutSet }
+    | { mode: "addSet"; exercise: Exercise }
     | { mode: "log" },
 ): SetFormData => {
   if (props.mode === "editSet") {
     return {
-      exerciseCatalog: props.exercise.exerciseCatalog.id,
-      weight: String(props.exercise.weight),
-      reps: String(props.exercise.reps),
+      exercise: props.workoutSet.exercise.id,
+      weight: String(props.workoutSet.weight),
+      reps: String(props.workoutSet.reps),
     };
   }
 
   if (props.mode === "addSet") {
     return {
-      exerciseCatalog: props.exerciseCatalog.id,
+      exercise: props.exercise.id,
       weight: "",
       reps: "",
     };
@@ -113,15 +118,18 @@ export const UpsertSetDialog = ({
   ...props
 }: UpsertSetDialogProps) => {
   const mode = props.mode;
-  const editExerciseId =
-    props.mode === "editSet" ? props.exercise.id : undefined;
-  const addCatalogId =
-    props.mode === "addSet" ? props.exerciseCatalog.id : undefined;
-  const [catalogOptions, setCatalogOptions] = useState<ExerciseCatalog[]>([]);
+  const editWorkoutSetId =
+    props.mode === "editSet" ? props.workoutSet.id : undefined;
+  const addExerciseId =
+    props.mode === "addSet" ? props.exercise.id : undefined;
+  const [exerciseOptions, setExerciseOptions] = useState<Exercise[]>([]);
+  const [openAddExercise, setOpenAddExercise] = useState(false);
+  const [addExerciseDialogKey, setAddExerciseDialogKey] = useState(0);
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { isDirty, isValid },
   } = useForm<SetFormData>({
     resolver: zodResolver(setFormSchema),
@@ -134,10 +142,8 @@ export const UpsertSetDialog = ({
     }
 
     reset(getInitialFormData(props));
-    // Only re-reset when the dialog opens or the edit/add target changes —
-    // not on every render (props object identity changes each render).
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- props read for getInitialFormData; stable via mode/editExerciseId/addCatalogId
-  }, [open, reset, mode, editExerciseId, addCatalogId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- props read for getInitialFormData; stable via mode/editWorkoutSetId/addExerciseId
+  }, [open, reset, mode, editWorkoutSetId, addExerciseId]);
 
   const isNameDisabled = mode !== "log";
 
@@ -146,16 +152,25 @@ export const UpsertSetDialog = ({
       return;
     }
 
-    async function loadCatalog() {
-      try {
-        const { exerciseCatalog } = await getAllExerciseCatalog();
-        setCatalogOptions(exerciseCatalog);
-      } catch (error) {
-        onSaveFailure(error instanceof Error ? error.message : "Unknown error");
-      }
-    }
+    let cancelled = false;
 
-    void loadCatalog();
+    getAllExercises()
+      .then(({ exercises }) => {
+        if (!cancelled) {
+          setExerciseOptions(exercises);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          onSaveFailure(
+            error instanceof Error ? error.message : "Unknown error",
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, onSaveFailure]);
 
   const blockNegativeKeys = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -167,19 +182,19 @@ export const UpsertSetDialog = ({
   const onSubmit = async (formData: SetFormData) => {
     try {
       if (mode === "editSet") {
-        if (!editExerciseId) {
-          onSaveFailure("Cannot update set: missing exercise id");
+        if (!editWorkoutSetId) {
+          onSaveFailure("Cannot update set: missing workout set id");
           return;
         }
 
-        await updateOneExercise(
-          editExerciseId,
+        await updateOneWorkoutSet(
+          editWorkoutSetId,
           Number(formData.weight),
           Number(formData.reps),
         );
       } else {
-        await createOneExercise({
-          exerciseCatalog: formData.exerciseCatalog,
+        await createOneWorkoutSet({
+          exercise: formData.exercise,
           weight: Number(formData.weight),
           reps: Number(formData.reps),
           performedAt: selectedDate.toISOString(),
@@ -193,6 +208,30 @@ export const UpsertSetDialog = ({
       onSaveFailure(error instanceof Error ? error.message : "Unknown error");
     }
   };
+
+  function handleAddCustomExercise() {
+    setAddExerciseDialogKey((key) => key + 1);
+    setOpenAddExercise(true);
+  }
+
+  function handleCloseAddCustomExercise() {
+    setOpenAddExercise(false);
+  }
+
+  async function handleCustomExerciseCreated(created: Exercise) {
+    try {
+      const { exercises } = await getAllExercises();
+      setExerciseOptions(exercises);
+    } catch (error) {
+      onSaveFailure(error instanceof Error ? error.message : "Unknown error");
+      return;
+    }
+
+    setValue("exercise", created.id, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }
 
   return (
     <>
@@ -222,21 +261,19 @@ export const UpsertSetDialog = ({
         </DialogTitle>
         <DialogContent>
           <Controller
-            name="exerciseCatalog"
+            name="exercise"
             control={control}
             render={({ field, fieldState }) => {
               const selectedExercise =
-                catalogOptions.find((item) => item.id === field.value) ??
-                (props.mode === "editSet"
-                  ? props.exercise.exerciseCatalog
-                  : null) ??
-                (props.mode === "addSet" ? props.exerciseCatalog : null);
+                exerciseOptions.find((item) => item.id === field.value) ??
+                (props.mode === "editSet" ? props.workoutSet.exercise : null) ??
+                (props.mode === "addSet" ? props.exercise : null);
 
               return (
                 <Autocomplete
                   disabled={isNameDisabled}
                   disableClearable
-                  options={catalogOptions}
+                  options={exerciseOptions}
                   getOptionLabel={(option) => option.name}
                   isOptionEqualToValue={(option, value) =>
                     option.id === value.id
@@ -318,6 +355,19 @@ export const UpsertSetDialog = ({
           />
         </DialogContent>
         <DialogActions>
+          {mode === "log" && (
+            <AddCustomExercise
+              key={addExerciseDialogKey}
+              open={openAddExercise}
+              onSaveSuccess={handleCustomExerciseCreated}
+              onClose={handleCloseAddCustomExercise}
+            />
+          )}
+          {mode === "log" && (
+            <Button variant="contained" onClick={handleAddCustomExercise}>
+              Add Exercise
+            </Button>
+          )}
           <Button
             type="submit"
             variant="contained"

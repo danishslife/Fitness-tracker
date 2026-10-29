@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from "typeorm";
+import { WorkoutSet } from "./WorkoutSet";
 import { Exercise } from "./Exercise";
 
 @Entity("users")
@@ -30,6 +31,9 @@ export class User {
 
   @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt!: Date;
+
+  @OneToMany(() => WorkoutSet, (workoutSet) => workoutSet.user)
+  workoutSets!: WorkoutSet[];
 
   @OneToMany(() => Exercise, (exercise) => exercise.user)
   exercises!: Exercise[];

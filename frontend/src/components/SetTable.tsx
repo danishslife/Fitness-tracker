@@ -1,4 +1,5 @@
 import { useState, type MouseEvent } from "react";
+import type { WorkoutSet } from "../types/workoutSet";
 import type { Exercise } from "../types/exercise";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -14,14 +15,14 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
-import { deleteOneExercise } from "../api/ExerciseService";
+import { deleteOneWorkoutSet } from "../api/WorkoutSetService";
 
 interface SetTableProps {
   onSaveFailure: (error: string) => void;
-  sets: Exercise[];
-  onEdit: (item: Exercise) => void;
+  sets: WorkoutSet[];
+  onEdit: (item: WorkoutSet) => void;
   onDeleteSuccess: () => void;
-  onAddSet: (catalog: Exercise["exerciseCatalog"]) => void;
+  onAddSet: (exercise: Exercise) => void;
 }
 
 export const SetTable = ({
@@ -34,7 +35,7 @@ export const SetTable = ({
   const handleDelete = async (id: number) => {
     if (!id) return;
     try {
-      await deleteOneExercise(id);
+      await deleteOneWorkoutSet(id);
       onDeleteSuccess();
     } catch (error) {
       onSaveFailure(error instanceof Error ? error.message : "Unknown error");
@@ -98,7 +99,7 @@ export const SetTable = ({
                   variant="text"
                   size="small"
                   startIcon={<AddIcon />}
-                  onClick={() => onAddSet(sets[0].exerciseCatalog)}
+                  onClick={() => onAddSet(sets[0].exercise)}
                   sx={{ color: "text.primary" }}
                 >
                   Add Set
